@@ -10,6 +10,7 @@ export default function HomePage() {
   const [userEmail, setUserEmail] = useState("");
   const [isPro, setIsPro] = useState(false);
   const [authReady, setAuthReady] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -55,34 +56,73 @@ export default function HomePage() {
     setUserEmail("");
     setIsPro(false);
     setAuthReady(true);
+    setNavOpen(false);
   }
 
   return (
     <main className="site-shell">
-      <nav className="site-navbar">
+     <nav className="site-navbar">
         <div className="section-wrap site-nav-wrap">
-          <Link href="/" className="navbar-brand">
+          <Link
+            href="/"
+            className="navbar-brand"
+            onClick={() => setNavOpen(false)}
+          >
             Buddy Matcher
           </Link>
 
-          <div className="site-nav-links">
-            <a className="site-nav-link" href="#tool">
+          <button
+            type="button"
+            className="nav-toggle"
+            aria-label="Toggle navigation"
+            aria-expanded={navOpen}
+            onClick={() => setNavOpen((prev) => !prev)}
+          >
+            {navOpen ? "✕" : "☰"}
+          </button>
+
+          <div className={`site-nav-links ${navOpen ? "open" : ""}`}>
+            <a
+              className="site-nav-link"
+              href="#tool"
+              onClick={() => setNavOpen(false)}
+            >
               Tool
             </a>
-            <a className="site-nav-link" href="#features">
+            <a
+              className="site-nav-link"
+              href="#features"
+              onClick={() => setNavOpen(false)}
+            >
               Features
             </a>
-            <a className="site-nav-link" href="#faq">
+            <a
+              className="site-nav-link"
+              href="#faq"
+              onClick={() => setNavOpen(false)}
+            >
               FAQ
             </a>
-            <a className="site-nav-link" href="#support">
+            <a
+              className="site-nav-link"
+              href="#support"
+              onClick={() => setNavOpen(false)}
+            >
               Support
             </a>
-            <a className="site-nav-link" href="#footer">
+            <Link
+              className="site-nav-link"
+              href="/contact"
+              onClick={() => setNavOpen(false)}
+            >
               Contact
-            </a>
+            </Link>
 
-            <a className="btn btn-light btn-sm nav-cta" href="#tool">
+            <a
+              className="btn btn-light btn-sm nav-cta"
+              href="#tool"
+              onClick={() => setNavOpen(false)}
+            >
               Open tool
             </a>
 
@@ -96,7 +136,11 @@ export default function HomePage() {
                   {isPro ? (
                     <span className="site-nav-link auth-text">Pro</span>
                   ) : (
-                    <Link href="/upgrade" className="btn btn-outline-light btn-sm nav-cta">
+                    <Link
+                      href="/upgrade"
+                      className="btn btn-outline-light btn-sm nav-cta"
+                      onClick={() => setNavOpen(false)}
+                    >
                       Go Pro
                     </Link>
                   )}
@@ -110,7 +154,11 @@ export default function HomePage() {
                   </button>
                 </>
               ) : (
-                <Link href="/login" className="btn btn-outline-light btn-sm nav-cta">
+                <Link
+                  href="/login"
+                  className="btn btn-outline-light btn-sm nav-cta"
+                  onClick={() => setNavOpen(false)}
+                >
                   Log in
                 </Link>
               )
@@ -289,9 +337,9 @@ export default function HomePage() {
           </div>
 
           <div className="footer-links">
-            <a href="#footer">Contact</a>
-            <a href="#footer">Privacy</a>
-            <a href="#footer">Terms</a>
+            <Link href="/contact">Contact</Link>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
             <a
               href="https://buymeacoffee.com/buddyup"
               target="_blank"
