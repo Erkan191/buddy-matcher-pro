@@ -236,7 +236,7 @@ export default function HomePage() {
                 </p>
 
                 <Link href="/upgrade" className="btn btn-success">
-                  Get Pro – £9 one-off
+                  Get Pro – £3.99 one-off
                 </Link>
               </div>
             </div>
