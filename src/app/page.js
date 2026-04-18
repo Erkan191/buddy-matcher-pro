@@ -172,11 +172,11 @@ export default function HomePage() {
           <div className="hero-copy">
             <div className="hero-badge">Free · Fast · Private</div>
 
-            <h1>Random pair generator for names, teams and classrooms</h1>
+            <h1>Create fair groups in seconds</h1>
 
             <p className="hero-sub">
-              Paste names, choose group size, and create random pairs or groups instantly.
-              No sign-up. No faff. Works right in your browser.
+              Paste names, choose a group size, and instantly generate balanced pairs or groups.
+              Perfect for classrooms, teams and activities.
             </p>
 
             <div className="hero-actions">
@@ -189,11 +189,15 @@ export default function HomePage() {
               </a>
             </div>
 
+            <div className="hero-proof">
+              Used by teachers, team leaders and coaches
+            </div>
+
             <ul className="hero-points">
-              <li>Paste from Excel or Google Sheets</li>
-              <li>Pairs, trios, or larger groups</li>
+              <li>Paste names from Excel or Google Sheets</li>
+              <li>Create pairs, trios, or larger groups</li>
               <li>Handles awkward leftovers automatically</li>
-              <li>Pro unlocks custom sizes, export and more</li>
+              <li>Pro unlocks saved lists, custom sizes, export and more</li>
             </ul>
           </div>
         </div>
@@ -212,30 +216,30 @@ export default function HomePage() {
       <section id="features" className="content-section">
         <div className="section-wrap">
           <div className="section-card">
-            <h2 className="section-title">Why people use it</h2>
+            <h2 className="section-title">Why people use Buddy Matcher</h2>
 
             <div className="feature-grid">
               <div className="feature-box">
                 <h3>Classrooms</h3>
                 <p>
-                  Quickly create random student pairs, trios or groups for activities,
-                  discussions and projects.
+                  Quickly create student pairs, trios or groups for activities,
+                  discussions, table work and projects.
                 </p>
               </div>
 
               <div className="feature-box">
                 <h3>Workshops</h3>
                 <p>
-                  Split people into fair groups for training sessions, coffee chats,
-                  team-building and breakout tasks.
+                  Split people into fair groups for training sessions, team-building,
+                  breakout tasks and group activities.
                 </p>
               </div>
 
               <div className="feature-box">
                 <h3>Events</h3>
                 <p>
-                  Useful for quiz nights, icebreakers, clubs, youth groups and any event
-                  where people need mixing up fast.
+                  Useful for quiz nights, icebreakers, clubs, youth groups, sports and
+                  any event where people need mixing up fast.
                 </p>
               </div>
 
@@ -254,17 +258,17 @@ export default function HomePage() {
       <section id="support" className="content-section support-section">
         <div className="section-wrap">
           <div className="section-card">
-            <h2 className="section-title">Support Buddy Matcher</h2>
+            <h2 className="section-title">Get more with Buddy Matcher Pro</h2>
 
             <p className="section-lead">
-              If this tool saves you time, you can support it below. That helps keep it
-              online and nudges it from “little practice project” into “nice bit of beer money”.
+              If Buddy Matcher saves you time, Pro unlocks extra features for people who
+              use it regularly for classrooms, teams, workshops or activities.
             </p>
 
             <div className="support-grid">
               <div className="support-box">
-                <h3>Buy me a coffee</h3>
-                <p>Lowest-friction option. Good for people who just want to say thanks.</p>
+                <h3>Leave a tip</h3>
+                <p>If the free tool helped you out, you can leave a small tip here.</p>
 
                 <a
                   href="https://buymeacoffee.com/buddyup"
@@ -279,8 +283,8 @@ export default function HomePage() {
               <div className="support-box support-box-pro">
                 <h3>Buddy Matcher Pro</h3>
                 <p>
-                  Groups of 4+, custom sizes, export CSV, print mode, saved lists and
-                  no-repeat pairing history.
+                  Unlock groups of 4+, custom sizes, saved lists, print mode, CSV export
+                  and no-repeat pairing history for regular use.
                 </p>
 
                 <Link href="/upgrade" className="btn btn-success">
@@ -301,7 +305,7 @@ export default function HomePage() {
               <h3>Can I paste names from Excel or Google Sheets?</h3>
               <p>
                 Yes. Paste one column of names straight into the box and Buddy Matcher will
-                split them into groups.
+                split them into pairs or groups.
               </p>
             </div>
 
@@ -333,7 +337,7 @@ export default function HomePage() {
         <div className="section-wrap footer-wrap">
           <div className="footer-brand">
             <strong>Buddy Matcher</strong>
-            <span>Simple random groups without the faff.</span>
+            <span>Simple group making without the faff.</span>
           </div>
 
           <div className="footer-links">
