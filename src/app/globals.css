@@ -111,6 +111,13 @@ img {
   font-size: 0.9rem;
 }
 
+.hero-proof {
+  margin: 0 0 1rem;
+  color: var(--green-2);
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
 .hero-section {
   padding: 4.5rem 0 2.5rem;
   background:

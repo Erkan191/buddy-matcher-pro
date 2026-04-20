@@ -35,7 +35,7 @@ export const metadata = {
       "Smart classroom group maker with random groups, random picker, blocked pairs and group leaders.",
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: "/favicon.png",
   },
 };
 
