@@ -281,10 +281,18 @@ export default function HomePage() {
 
               <div className="support-box support-box-pro">
   <h3>Buddy Matcher Pro</h3>
-  <p>
-    Groups of 4+, custom sizes, blocked pairs, group leaders, saved lists,
-    CSV export, print mode and more.
+
+  <p className="section-lead">
+    Take control of your groups — not just randomise them.
   </p>
+
+  <ul className="pro-feature-list">
+    <li>Don’t group specific people together</li>
+    <li>Assign and spread group leaders</li>
+    <li>Groups of 4, 5, 6 and custom sizes</li>
+    <li>Save and reuse class lists</li>
+    <li>Export to CSV and print clean layouts</li>
+  </ul>
 
   <Link href="/upgrade" className="btn btn-success">
     Get Pro – £3.99 one-off

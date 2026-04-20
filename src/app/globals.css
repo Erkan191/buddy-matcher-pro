@@ -228,6 +228,8 @@ img {
   font-weight: 600;
 }
 
+
+
 .tool-grid-two {
   display: grid;
   grid-template-columns: minmax(320px, 460px) minmax(0, 1fr);
@@ -882,4 +884,79 @@ img {
   .results-actions .btn {
     flex: 1 1 auto;
   }
+}
+
+.pro-feature-list {
+  margin: 0.75rem 0 1.25rem;
+  padding-left: 1.2rem;
+}
+
+.pro-feature-list li {
+  margin-bottom: 0.4rem;
+}
+
+/* Upgrade page */
+.upgrade-page {
+  padding: 3rem 1rem;
+}
+
+.upgrade-wrap {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.upgrade-sub {
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  color: var(--text-2);
+}
+
+.upgrade-section {
+  margin-bottom: 2rem;
+}
+
+.upgrade-section.highlight {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 10px;
+}
+
+.upgrade-features {
+  padding-left: 1.2rem;
+}
+
+.upgrade-features li {
+  margin-bottom: 0.5rem;
+}
+
+.price-box {
+  text-align: center;
+  background: #f1f3f5;
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.price {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.price span {
+  font-size: 1rem;
+  font-weight: normal;
+}
+
+.price-sub {
+  margin-bottom: 1rem;
+  color: var(--text-2);
+}
+
+.trust {
+  font-size: 0.95rem;
+  color: var(--text-2);
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 1rem;
 }
