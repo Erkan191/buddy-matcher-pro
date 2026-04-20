@@ -175,9 +175,10 @@ export default function HomePage() {
             <h1>Create fair groups in seconds</h1>
 
             <p className="hero-sub">
-              Paste names, choose a group size, and instantly generate balanced pairs or groups.
-              Perfect for classrooms, teams and activities.
-            </p>
+  Paste names, choose group size, and create random pairs or groups instantly.
+  Pick one randomly, keep certain people apart, and spread group leaders across groups.
+  No sign-up for the free tool. No faff. Works right in your browser.
+</p>
 
             <div className="hero-actions">
               <a href="#tool" className="btn btn-success btn-lg">
@@ -194,11 +195,11 @@ export default function HomePage() {
             </div>
 
             <ul className="hero-points">
-              <li>Paste names from Excel or Google Sheets</li>
-              <li>Create pairs, trios, or larger groups</li>
-              <li>Handles awkward leftovers automatically</li>
-              <li>Pro unlocks saved lists, custom sizes, export and more</li>
-            </ul>
+  <li>Paste from Excel or Google Sheets</li>
+  <li>Pairs, trios, or larger groups</li>
+  <li>Handles awkward leftovers automatically</li>
+  <li>Pro unlocks custom sizes, export and more</li>
+</ul>
           </div>
         </div>
       </header>
@@ -219,38 +220,36 @@ export default function HomePage() {
             <h2 className="section-title">Why people use Buddy Matcher</h2>
 
             <div className="feature-grid">
-              <div className="feature-box">
-                <h3>Classrooms</h3>
-                <p>
-                  Quickly create student pairs, trios or groups for activities,
-                  discussions, table work and projects.
-                </p>
-              </div>
+  <div className="feature-box">
+    <h3>Fast random grouping</h3>
+    <p>
+      Quickly create random student pairs, trios or larger groups for activities,
+      discussions and projects.
+    </p>
+  </div>
 
-              <div className="feature-box">
-                <h3>Workshops</h3>
-                <p>
-                  Split people into fair groups for training sessions, team-building,
-                  breakout tasks and group activities.
-                </p>
-              </div>
+  <div className="feature-box">
+    <h3>Random picker</h3>
+    <p>
+      Pick one person randomly when you need a quick starter, helper, answerer or volunteer.
+    </p>
+  </div>
 
-              <div className="feature-box">
-                <h3>Events</h3>
-                <p>
-                  Useful for quiz nights, icebreakers, clubs, youth groups, sports and
-                  any event where people need mixing up fast.
-                </p>
-              </div>
+  <div className="feature-box">
+    <h3>Smarter Pro controls</h3>
+    <p>
+      Keep certain people apart and spread named group leaders across different groups.
+    </p>
+  </div>
 
-              <div className="feature-box">
-                <h3>Simple and private</h3>
-                <p>
-                  No accounts for the free tool, no spreadsheet fiddling, and paid features
-                  only when you want them.
-                </p>
-              </div>
-            </div>
+  <div className="feature-box">
+    <h3>Simple and private</h3>
+    <p>
+      No accounts for the free tool, no spreadsheet fiddling, and paid features
+      only when you want them.
+    </p>
+  </div>
+</div>
           </div>
         </div>
       </section>
@@ -281,57 +280,78 @@ export default function HomePage() {
               </div>
 
               <div className="support-box support-box-pro">
-                <h3>Buddy Matcher Pro</h3>
-                <p>
-                  Unlock groups of 4+, custom sizes, saved lists, print mode, CSV export
-                  and no-repeat pairing history for regular use.
-                </p>
+  <h3>Buddy Matcher Pro</h3>
+  <p>
+    Groups of 4+, custom sizes, blocked pairs, group leaders, saved lists,
+    CSV export, print mode and more.
+  </p>
 
-                <Link href="/upgrade" className="btn btn-success">
-                  Get Pro – £3.99 one-off
-                </Link>
-              </div>
+  <Link href="/upgrade" className="btn btn-success">
+    Get Pro – £3.99 one-off
+  </Link>
+</div>
             </div>
           </div>
         </div>
       </section>
 
       <section id="faq" className="content-section">
-        <div className="section-wrap">
-          <div className="section-card">
-            <h2 className="section-title">FAQ</h2>
+  <div className="section-wrap">
+    <div className="section-card">
+      <h2 className="section-title">FAQ</h2>
 
-            <div className="faq-item">
-              <h3>Can I paste names from Excel or Google Sheets?</h3>
-              <p>
-                Yes. Paste one column of names straight into the box and Buddy Matcher will
-                split them into pairs or groups.
-              </p>
-            </div>
+      <div className="faq-item">
+        <h3>Can I paste names from Excel or Google Sheets?</h3>
+        <p>
+          Yes. Paste one column of names straight into the box and Buddy Matcher will
+          split them into groups.
+        </p>
+      </div>
 
-            <div className="faq-item">
-              <h3>What happens if the numbers do not divide evenly?</h3>
-              <p>
-                It balances the final groups so you do not end up with one lonely person left
-                on their own.
-              </p>
-            </div>
+      <div className="faq-item">
+        <h3>What happens if the numbers do not divide evenly?</h3>
+        <p>
+          It balances the final groups so you do not end up with one lonely person left
+          on their own.
+        </p>
+      </div>
 
-            <div className="faq-item">
-              <h3>Do I need an account?</h3>
-              <p>No. It works instantly in your browser. No sign-up needed for the free tool.</p>
-            </div>
+      <div className="faq-item">
+        <h3>Can I pick one person randomly?</h3>
+        <p>
+          Yes. Buddy Matcher includes a quick random picker for choosing one person from your list.
+        </p>
+      </div>
 
-            <div className="faq-item">
-              <h3>Is it private?</h3>
-              <p>
-                Yes. Names are stored in your browser using local storage unless and until
-                you choose account-based Pro features.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <div className="faq-item">
+        <h3>Can I stop certain people being grouped together?</h3>
+        <p>
+          Yes. Pro includes a “Don’t group these two” option so you can keep specific pairs apart.
+        </p>
+      </div>
+
+      <div className="faq-item">
+        <h3>Can I assign group leaders?</h3>
+        <p>
+          Yes. Pro lets you mark group leaders and spread them across different groups.
+        </p>
+      </div>
+
+      <div className="faq-item">
+        <h3>Do I need an account?</h3>
+        <p>No. It works instantly in your browser. No sign-up needed for the free tool.</p>
+      </div>
+
+      <div className="faq-item">
+        <h3>Is it private?</h3>
+        <p>
+          Yes. Names are stored in your browser using local storage unless and until
+          you choose account-based Pro features.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
 
       <footer className="site-footer" id="footer">
         <div className="section-wrap footer-wrap">

@@ -316,6 +316,25 @@ img {
   margin-top: 1rem;
 }
 
+.smart-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.smart-summary {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.modal-textarea {
+  min-height: 180px;
+  margin-top: 0.75rem;
+}
+
+
 .action-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -840,7 +859,8 @@ img {
 
   .form-row-two,
   .action-grid,
-  .action-grid.compact {
+  .action-grid.compact,
+  .smart-feature-grid {
     grid-template-columns: 1fr;
   }
 

@@ -16,6 +16,19 @@ const gradients = [
   "linear-gradient(135deg,#845ef7,#5c7cfa)",
 ];
 
+function getSessionId() {
+  if (typeof window === "undefined") return "";
+
+  let sessionId = window.localStorage.getItem("bm_session_id");
+
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    window.localStorage.setItem("bm_session_id", sessionId);
+  }
+
+  return sessionId;
+}
+
 function parseNames(raw) {
   return raw
     .split(/\r?\n/)
@@ -66,6 +79,135 @@ function buildGroups(sourceNames, groupSize) {
   return groups;
 }
 
+function normalizeName(name) {
+  return name.trim().toLowerCase();
+}
+
+function pairKey(left, right) {
+  const pair = [normalizeName(left), normalizeName(right)].sort();
+  return `${pair[0]}|||${pair[1]}`;
+}
+
+function buildGroupSizes(totalNames, groupSize) {
+  let remaining = totalNames;
+  const sizes = [];
+
+  while (remaining > 0) {
+    let current = groupSize;
+
+    if (remaining <= groupSize) {
+      current = remaining;
+    } else if (remaining - groupSize === 1) {
+      current = groupSize + 1;
+    }
+
+    sizes.push(current);
+    remaining -= current;
+  }
+
+  return sizes;
+}
+
+function parseBlockedPairsText(raw) {
+  const lines = raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const seen = new Set();
+  const pairs = [];
+
+  for (const line of lines) {
+    const parts = line.includes("|") ? line.split("|") : line.split(",");
+
+    if (parts.length < 2) continue;
+
+    const left = parts[0].trim();
+    const right = parts[1].trim();
+
+    if (!left || !right) continue;
+    if (normalizeName(left) === normalizeName(right)) continue;
+
+    const key = pairKey(left, right);
+    if (seen.has(key)) continue;
+
+    seen.add(key);
+    pairs.push({ left, right });
+  }
+
+  return pairs;
+}
+
+function formatBlockedPairsText(pairs) {
+  return pairs.map((pair) => `${pair.left} | ${pair.right}`).join("\n");
+}
+
+function canJoinGroup(name, group, blockedPairSet) {
+  return group.every((member) => !blockedPairSet.has(pairKey(name, member)));
+}
+
+function tryBuildSmartGroups({
+  names,
+  selectedSize,
+  leaderNames,
+  blockedPairs,
+}) {
+  const targetSizes = buildGroupSizes(names.length, selectedSize);
+  const blockedPairSet = new Set(
+    blockedPairs.map((pair) => pairKey(pair.left, pair.right))
+  );
+
+  const leaderSet = new Set(leaderNames.map((name) => normalizeName(name)));
+
+  const chosenLeaders = shuffleArray(
+    names.filter((name) => leaderSet.has(normalizeName(name)))
+  );
+
+  const nonLeaders = shuffleArray(
+    names.filter((name) => !leaderSet.has(normalizeName(name)))
+  );
+
+  const groups = targetSizes.map(() => []);
+
+  const oneLeaderPerGroup = chosenLeaders.slice(0, groups.length);
+  const extraLeaders = chosenLeaders.slice(groups.length);
+
+  oneLeaderPerGroup.forEach((leader, index) => {
+    groups[index].push(leader);
+  });
+
+  const remainingNames = shuffleArray([...extraLeaders, ...nonLeaders]);
+
+  for (const name of remainingNames) {
+    const validGroupIndexes = groups
+      .map((group, index) => ({ group, index }))
+      .filter(({ group, index }) => {
+        if (group.length >= targetSizes[index]) return false;
+        return canJoinGroup(name, group, blockedPairSet);
+      })
+      .map(({ index }) => index);
+
+    if (!validGroupIndexes.length) {
+      return null;
+    }
+
+    const smallestSize = Math.min(
+      ...validGroupIndexes.map((index) => groups[index].length)
+    );
+
+    const bestIndexes = validGroupIndexes.filter(
+      (index) => groups[index].length === smallestSize
+    );
+
+    const pickedIndex =
+      bestIndexes[Math.floor(Math.random() * bestIndexes.length)];
+
+    groups[pickedIndex].push(name);
+  }
+
+  return groups;
+}
+
 export default function BuddyMatcherTool({
   isPro = false,
   authReady = false,
@@ -102,6 +244,14 @@ export default function BuddyMatcherTool({
   const [saveListModalOpen, setSaveListModalOpen] = useState(false);
   const [saveListName, setSaveListName] = useState("");
 
+  const [blockedPairs, setBlockedPairs] = useState([]);
+  const [blockedPairsModalOpen, setBlockedPairsModalOpen] = useState(false);
+  const [blockedPairsDraft, setBlockedPairsDraft] = useState("");
+
+  const [leaderNames, setLeaderNames] = useState([]);
+  const [leadersModalOpen, setLeadersModalOpen] = useState(false);
+  const [leadersDraft, setLeadersDraft] = useState("");
+
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -113,13 +263,53 @@ export default function BuddyMatcherTool({
     window.localStorage.setItem(STORAGE_KEY, rawInput);
   }, [rawInput]);
 
+    useEffect(() => {
+    async function trackPageView() {
+      const sessionId = getSessionId();
+      if (!sessionId) return;
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      await supabase.from("usage_events").insert({
+        event_type: "page_view",
+        session_id: sessionId,
+        user_id: user?.id ?? null,
+        metadata: {
+          path: window.location.pathname,
+        },
+      });
+    }
+
+    void trackPageView();
+  }, []);
+
   const currentNames = useMemo(() => {
     return dedupeNames(parseNames(rawInput));
   }, [rawInput]);
 
-   function openProModal(reason) {
+  function openProModal(reason) {
     setLockedReason(reason);
     setShowProModal(true);
+
+    void (async () => {
+      const sessionId = getSessionId();
+      if (!sessionId) return;
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      await supabase.from("usage_events").insert({
+        event_type: "pro_modal_opened",
+        session_id: sessionId,
+        user_id: user?.id ?? null,
+        metadata: {
+          reason,
+        },
+      });
+    })();
   }
 
   function openNotice(title, message) {
@@ -236,7 +426,24 @@ export default function BuddyMatcherTool({
     }, 50);
   }
 
-  function handleAddNames() {
+    function handleGroupSizeChange(e) {
+    const value = e.target.value;
+
+    if (value === "custom") {
+      if (!requirePro("Custom group sizes are a Pro feature.")) return;
+      setUseCustom(true);
+      return;
+    }
+
+    const size = Number(value);
+
+    if (size > 3 && !requirePro(`Groups of ${size} are a Pro feature.`)) return;
+
+    setUseCustom(false);
+    setGroupSize(size);
+  }
+
+    function handleAddNames() {
     const cleaned = dedupeNames(parseNames(rawInput));
     setRawInput(cleaned.join("\n"));
     setShowNames(true);
@@ -279,23 +486,6 @@ export default function BuddyMatcherTool({
     });
   }
 
-  function handleGroupSizeChange(e) {
-    const value = e.target.value;
-
-    if (value === "custom") {
-      if (!requirePro("Custom group sizes are a Pro feature.")) return;
-      setUseCustom(true);
-      return;
-    }
-
-    const size = Number(value);
-
-    if (size > 3 && !requirePro(`Groups of ${size} are a Pro feature.`)) return;
-
-    setUseCustom(false);
-    setGroupSize(size);
-  }
-
   function handleGenerate() {
     const names = currentNames;
 
@@ -316,9 +506,67 @@ export default function BuddyMatcherTool({
       return;
     }
 
-    const groups = buildGroups(shuffleArray(names), selectedSize);
-    setResults(groups);
+    const activeBlockedPairs = blockedPairs.filter(
+      (pair) =>
+        names.some((name) => normalizeName(name) === normalizeName(pair.left)) &&
+        names.some((name) => normalizeName(name) === normalizeName(pair.right))
+    );
+
+    const activeLeaderNames = leaderNames.filter((leader) =>
+      names.some((name) => normalizeName(name) === normalizeName(leader))
+    );
+
+    let finalGroups = null;
+
+    if (!activeBlockedPairs.length && !activeLeaderNames.length) {
+      finalGroups = buildGroups(shuffleArray(names), selectedSize);
+    } else {
+      for (let attempt = 0; attempt < 300; attempt += 1) {
+        finalGroups = tryBuildSmartGroups({
+          names: shuffleArray(names),
+          selectedSize,
+          leaderNames: activeLeaderNames,
+          blockedPairs: activeBlockedPairs,
+        });
+
+        if (finalGroups) break;
+      }
+
+      if (!finalGroups) {
+        openNotice(
+          "Couldn’t satisfy all rules",
+          "Try removing some blocked pairs, using fewer group leaders, or changing the group size."
+        );
+        return;
+      }
+    }
+
+    setResults(finalGroups);
     scrollToResults();
+
+    void (async () => {
+      const sessionId = getSessionId();
+      if (!sessionId) return;
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      await supabase.from("usage_events").insert({
+        event_type: "generate_groups",
+        session_id: sessionId,
+        user_id: user?.id ?? null,
+        metadata: {
+          selected_size: selectedSize,
+          used_custom_size: useCustom,
+          avoid_repeats: avoidRepeats,
+          total_names: names.length,
+          total_groups: finalGroups.length,
+          blocked_pairs_count: activeBlockedPairs.length,
+          leader_count: activeLeaderNames.length,
+        },
+      });
+    })();
   }
 
   function handleCopy() {
@@ -402,6 +650,24 @@ export default function BuddyMatcherTool({
       openNotice("Nothing to save", "Add some names first.");
       return;
     }
+
+        void (async () => {
+      const sessionId = getSessionId();
+      if (!sessionId) return;
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      await supabase.from("usage_events").insert({
+        event_type: "save_list_clicked",
+        session_id: sessionId,
+        user_id: user?.id ?? null,
+        metadata: {
+          total_names: cleanedNames.length,
+        },
+      });
+    })();
 
     setSaveListName("");
     setSaveListModalOpen(true);
@@ -543,6 +809,56 @@ export default function BuddyMatcherTool({
     );
   }
 
+    function handleRandomPick() {
+    if (!currentNames.length) {
+      openNotice("No names yet", "Add some names first.");
+      return;
+    }
+
+    const picked = shuffleArray(currentNames)[0];
+    openNotice("Random pick", picked);
+  }
+
+  function handleOpenBlockedPairsModal() {
+    if (!requirePro("Don't group these two is a Pro feature.")) return;
+
+    setBlockedPairsDraft(formatBlockedPairsText(blockedPairs));
+    setBlockedPairsModalOpen(true);
+  }
+
+  function handleSaveBlockedPairs() {
+    const parsed = parseBlockedPairsText(blockedPairsDraft);
+    setBlockedPairs(parsed);
+    setBlockedPairsModalOpen(false);
+
+    openNotice(
+      "Blocked pairs updated",
+      parsed.length
+        ? `${parsed.length} blocked pair${parsed.length === 1 ? "" : "s"} saved.`
+        : "No blocked pairs saved."
+    );
+  }
+
+  function handleOpenLeadersModal() {
+    if (!requirePro("Group leaders is a Pro feature.")) return;
+
+    setLeadersDraft(leaderNames.join("\n"));
+    setLeadersModalOpen(true);
+  }
+
+  function handleSaveLeaders() {
+    const parsed = dedupeNames(parseNames(leadersDraft));
+    setLeaderNames(parsed);
+    setLeadersModalOpen(false);
+
+    openNotice(
+      "Group leaders updated",
+      parsed.length
+        ? `${parsed.length} leader${parsed.length === 1 ? "" : "s"} saved.`
+        : "No group leaders saved."
+    );
+  }
+
   const previewText = useMemo(() => {
     if (currentNames.length === 0) {
       return "Add some names to see group distribution.";
@@ -678,7 +994,50 @@ export default function BuddyMatcherTool({
               </label>
             </div>
 
-            <div className="preview-box">{previewText}</div>
+                        <div className="preview-box">{previewText}</div>
+
+            <div className="smart-feature-grid">
+              <button
+                type="button"
+                className="btn btn-outline-success"
+                onClick={handleRandomPick}
+              >
+                Pick one randomly
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-outline-dark"
+                onClick={handleOpenBlockedPairsModal}
+              >
+                Don’t group these two
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-outline-dark"
+                onClick={handleOpenLeadersModal}
+              >
+                Group leaders
+              </button>
+            </div>
+
+            {(blockedPairs.length > 0 || leaderNames.length > 0) && (
+              <div className="smart-summary">
+                {blockedPairs.length > 0 && (
+                  <p className="small-note">
+                    <strong>Blocked pairs:</strong>{" "}
+                    {blockedPairs.map((pair) => `${pair.left} + ${pair.right}`).join(", ")}
+                  </p>
+                )}
+
+                {leaderNames.length > 0 && (
+                  <p className="small-note">
+                    <strong>Group leaders:</strong> {leaderNames.join(", ")}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="action-grid">
               <button id="add-button" className="btn btn-primary" type="button" onClick={handleAddNames}>
@@ -848,6 +1207,82 @@ export default function BuddyMatcherTool({
         </div>
       </div>
 
+      {blockedPairsModalOpen && (
+        <div className="pro-modal-backdrop">
+          <div className="pro-modal">
+            <div className="pro-modal-badge">Buddy Matcher Pro</div>
+            <h3>Don’t group these two</h3>
+            <p>
+              Enter one pair per line using this format:
+              <br />
+              <strong>Ada | Jack</strong>
+            </p>
+
+            <textarea
+              className="form-control input-box modal-textarea"
+              value={blockedPairsDraft}
+              onChange={(e) => setBlockedPairsDraft(e.target.value)}
+              placeholder={"Ada | Jack\nTom | Sarah"}
+            />
+
+            <div className="pro-modal-actions">
+              <button
+                type="button"
+                className="btn btn-success"
+                onClick={handleSaveBlockedPairs}
+              >
+                Save blocked pairs
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => setBlockedPairsModalOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {leadersModalOpen && (
+        <div className="pro-modal-backdrop">
+          <div className="pro-modal">
+            <div className="pro-modal-badge">Buddy Matcher Pro</div>
+            <h3>Group leaders</h3>
+            <p>
+              Enter one leader name per line. Buddy Matcher will try to spread them across groups.
+            </p>
+
+            <textarea
+              className="form-control input-box modal-textarea"
+              value={leadersDraft}
+              onChange={(e) => setLeadersDraft(e.target.value)}
+              placeholder={"Ada\nTom\nSarah"}
+            />
+
+            <div className="pro-modal-actions">
+              <button
+                type="button"
+                className="btn btn-success"
+                onClick={handleSaveLeaders}
+              >
+                Save leaders
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => setLeadersModalOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {saveListModalOpen && (
         <div className="pro-modal-backdrop">
           <div className="pro-modal">
@@ -942,11 +1377,55 @@ export default function BuddyMatcherTool({
 
             <div className="pro-modal-actions">
               {isLoggedIn ? (
-                <Link href="/upgrade" className="btn btn-success">
+                <Link
+                  href="/upgrade"
+                  className="btn btn-success"
+                  onClick={() => {
+                    void (async () => {
+                      const sessionId = getSessionId();
+                      if (!sessionId) return;
+
+                      const {
+                        data: { user },
+                      } = await supabase.auth.getUser();
+
+                      await supabase.from("usage_events").insert({
+                        event_type: "upgrade_clicked",
+                        session_id: sessionId,
+                        user_id: user?.id ?? null,
+                        metadata: {
+                          source: "pro_modal",
+                          cta: "go_pro",
+                          reason: lockedReason,
+                        },
+                      });
+                    })();
+                  }}
+                >
                   Go Pro
                 </Link>
               ) : (
-                <Link href="/login" className="btn btn-success">
+                <Link
+                  href="/login"
+                  className="btn btn-success"
+                  onClick={() => {
+                    void (async () => {
+                      const sessionId = getSessionId();
+                      if (!sessionId) return;
+
+                      await supabase.from("usage_events").insert({
+                        event_type: "upgrade_clicked",
+                        session_id: sessionId,
+                        user_id: null,
+                        metadata: {
+                          source: "pro_modal",
+                          cta: "log_in_to_unlock_pro",
+                          reason: lockedReason,
+                        },
+                      });
+                    })();
+                  }}
+                >
                   Log in to unlock Pro
                 </Link>
               )}
