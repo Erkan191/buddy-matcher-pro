@@ -1,8 +1,49 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { supabase } from "@/supabaseClient";
 
 export default function UpgradePage() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function handleUpgrade() {
+    try {
+      setIsLoading(true);
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        window.location.href = "/login";
+        return;
+      }
+
+      const response = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data?.url) {
+        throw new Error(data?.error || "Could not start checkout.");
+      }
+
+      window.location.href = data.url;
+    } catch (error) {
+      console.error(error);
+      alert("Could not start checkout. Please try again.");
+      setIsLoading(false);
+    }
+  }
+
   return (
     <main className="upgrade-page">
       <div className="upgrade-wrap">
@@ -59,9 +100,13 @@ export default function UpgradePage() {
             No subscription. Pay once and use it forever.
           </p>
 
-          <button className="btn btn-success btn-lg">
-            Upgrade to Pro
-          </button>
+          <button
+  className="btn btn-success btn-lg"
+  onClick={handleUpgrade}
+  disabled={isLoading}
+>
+  {isLoading ? "Loading checkout..." : "Upgrade to Pro"}
+</button>
         </div>
 
         {/* TRUST */}
