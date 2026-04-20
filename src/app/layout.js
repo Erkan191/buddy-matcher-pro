@@ -34,9 +34,7 @@ export const metadata = {
     description:
       "Smart classroom group maker with random groups, random picker, blocked pairs and group leaders.",
   },
-  icons: {
-    icon: "/favicon.png",
-  },
+ 
 };
 
 export default function RootLayout({ children }) {
