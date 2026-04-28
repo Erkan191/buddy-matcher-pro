@@ -19,7 +19,7 @@ export default function ContactPage() {
 
             <h2>Email</h2>
             <p>
-              <a href="mailto:hello@buddymatcher.co.uk">hello@buddymatcher.co.uk</a>
+              <a href="mailto:erkan.said22@gmail.com">hello@buddymatcher.co.uk</a>
             </p>
 
             <h2>What to include</h2>

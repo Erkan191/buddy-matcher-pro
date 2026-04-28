@@ -40,7 +40,7 @@ export default function PrivacyPage() {
             <h2>Contact</h2>
             <p>
               For privacy questions, email{" "}
-              <a href="mailto:hello@buddymatcher.co.uk">hello@buddymatcher.co.uk</a>.
+              <a href="mailto:erkan.said22@gmail.com">hello@buddymatcher.co.uk</a>.
             </p>
           </div>
 
