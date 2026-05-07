@@ -960,3 +960,57 @@ img {
   display: inline-block;
   margin-top: 1rem;
 }
+
+.pro-modal-price-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin: 0.75rem 0 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.pro-modal-lead {
+  margin-top: 0.75rem;
+  color: #4b5563;
+  line-height: 1.55;
+}
+
+.pro-benefit-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1rem 0;
+}
+
+.pro-benefit-item {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #f9fafb;
+}
+
+.pro-benefit-item span {
+  flex: 0 0 auto;
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.pro-benefit-item p {
+  margin: 0;
+  color: #1f2937;
+  line-height: 1.35;
+  font-size: 0.95rem;
+}
+
+.pro-modal-small {
+  margin: 0.75rem 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}

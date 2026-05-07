@@ -1364,23 +1364,44 @@ export default function BuddyMatcherTool({
           <div className="pro-modal">
             <div className="pro-modal-badge">Buddy Matcher Pro</div>
 
+            <div className="pro-modal-price-pill">£3.99 one-off</div>
+
             <h3>Get full control with Pro</h3>
 
-            <p>
+            <p className="pro-modal-lead">
               {lockedReason} Pro is for people who use Buddy Matcher regularly
               and want faster, more controlled grouping.
             </p>
 
-            <ul className="pro-modal-list">
-              <li>Make proper groups of 4, 5, 6 or any custom size</li>
-              <li>Keep specific people apart with “don’t group these two”</li>
-              <li>Spread group leaders across groups</li>
-              <li>Save lists so you do not retype names every time</li>
-              <li>Export, copy or print clean group layouts</li>
-            </ul>
+            <div className="pro-benefit-list">
+              <div className="pro-benefit-item">
+                <span>👥</span>
+                <p>Make proper groups of 4, 5, 6 or any custom size</p>
+              </div>
 
-            <p className="small-note">
-              £3.99 one-off. No subscription.
+              <div className="pro-benefit-item">
+                <span>🚫</span>
+                <p>Keep specific people apart with “don’t group these two”</p>
+              </div>
+
+              <div className="pro-benefit-item">
+                <span>⭐</span>
+                <p>Spread group leaders across groups</p>
+              </div>
+
+              <div className="pro-benefit-item">
+                <span>💾</span>
+                <p>Save lists so you do not retype names every time</p>
+              </div>
+
+              <div className="pro-benefit-item">
+                <span>🖨️</span>
+                <p>Export, copy or print clean group layouts</p>
+              </div>
+            </div>
+
+            <p className="pro-modal-small">
+              No subscription. Pay once and use it forever.
             </p>
 
             <div className="pro-modal-actions">
