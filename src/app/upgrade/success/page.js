@@ -11,7 +11,7 @@ export default function UpgradeSuccessPage() {
         <h1 className="text-4xl font-bold">Thank you</h1>
 
         <p className="mt-4 text-lg text-zinc-600">
-          Your payment went through. Pro unlock will be connected next.
+          Your payment went through. You now have Buddy Matcher Pro.
         </p>
 
         <div className="mt-8 flex flex-wrap gap-3">

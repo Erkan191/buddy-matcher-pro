@@ -1364,16 +1364,24 @@ export default function BuddyMatcherTool({
           <div className="pro-modal">
             <div className="pro-modal-badge">Buddy Matcher Pro</div>
 
-            <h3>Unlock Pro features</h3>
-            <p>{lockedReason}</p>
+            <h3>Get full control with Pro</h3>
+
+            <p>
+              {lockedReason} Pro is for people who use Buddy Matcher regularly
+              and want faster, more controlled grouping.
+            </p>
 
             <ul className="pro-modal-list">
-              <li>Groups of 4, 5, 6 and custom sizes</li>
-              <li>Saved named lists</li>
-              <li>No-repeat pairing history</li>
-              <li>CSV export</li>
-              <li>Print / presentation mode</li>
+              <li>Make proper groups of 4, 5, 6 or any custom size</li>
+              <li>Keep specific people apart with “don’t group these two”</li>
+              <li>Spread group leaders across groups</li>
+              <li>Save lists so you do not retype names every time</li>
+              <li>Export, copy or print clean group layouts</li>
             </ul>
+
+            <p className="small-note">
+              £3.99 one-off. No subscription.
+            </p>
 
             <div className="pro-modal-actions">
               {isLoggedIn ? (
@@ -1426,7 +1434,7 @@ export default function BuddyMatcherTool({
                     })();
                   }}
                 >
-                  Log in to unlock Pro
+                  Log in to upgrade
                 </Link>
               )}
 
