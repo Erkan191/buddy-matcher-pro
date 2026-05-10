@@ -1,46 +1,35 @@
-import "./globals.css";
-
 export const metadata = {
   metadataBase: new URL("https://www.buddymatcher.co.uk"),
   title: {
-    default: "Buddy Matcher",
+    default: "Buddy Matcher | Smart Classroom Group Maker",
     template: "%s | Buddy Matcher",
   },
   description:
-    "Smart classroom group maker for names, teams and classrooms. Create random pairs or groups, pick one randomly, keep certain people apart, and spread group leaders across teams.",
+    "Create fair, controlled classroom groups in seconds. Avoid repeat pairings, keep certain students apart, spread group leaders and make random pairs or larger groups.",
   keywords: [
-    "random pair generator",
-    "group maker",
-    "classroom group generator",
+    "classroom group maker",
     "student group generator",
+    "random pair generator",
+    "random group generator",
+    "teacher group maker",
+    "avoid repeat pairings",
+    "don't group these two",
+    "group leaders",
     "random team generator",
     "buddy matcher",
-    "pick one randomly",
-    "group leader tool",
-    "don't group these two",
-    "teacher grouping tool",
   ],
   openGraph: {
-    title: "Buddy Matcher",
+    title: "Buddy Matcher | Smart Classroom Group Maker",
     description:
-      "Smart classroom group maker for names, teams and classrooms. Random groups, random picker, blocked pairs and group leaders.",
+      "Create fair, controlled classroom groups. Avoid repeat pairings, keep certain people apart, spread group leaders and make bigger groups.",
     url: "https://www.buddymatcher.co.uk",
     siteName: "Buddy Matcher",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "Buddy Matcher",
+    title: "Buddy Matcher | Smart Classroom Group Maker",
     description:
-      "Smart classroom group maker with random groups, random picker, blocked pairs and group leaders.",
+      "Smart classroom grouping: avoid repeat pairings, keep certain people apart, spread group leaders and make random groups fast.",
   },
- 
 };
-
-export default function RootLayout({ children }) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  );
-}

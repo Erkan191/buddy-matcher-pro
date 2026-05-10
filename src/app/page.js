@@ -175,9 +175,9 @@ export default function HomePage() {
             <h1>Create fair groups in seconds</h1>
 
             <p className="hero-sub">
-  Paste names, choose group size, and create random pairs or groups instantly.
-  Pick one randomly, keep certain people apart, and spread group leaders across groups.
-  No sign-up for the free tool. No faff. Works right in your browser.
+  A smarter classroom group maker for teachers, teams and activities. Paste names,
+  create random groups, avoid repeat pairings, keep certain people apart and spread
+  group leaders across groups.
 </p>
 
             <div className="hero-actions">
@@ -257,12 +257,12 @@ export default function HomePage() {
       <section id="support" className="content-section support-section">
         <div className="section-wrap">
           <div className="section-card">
-            <h2 className="section-title">Get more with Buddy Matcher Pro</h2>
+            <h2 className="section-title">Upgrade from random groups to controlled groups</h2>
 
-            <p className="section-lead">
-              If Buddy Matcher saves you time, Pro unlocks extra features for people who
-              use it regularly for classrooms, teams, workshops or activities.
-            </p>
+<p className="section-lead">
+  Free is great for quick random groups. Pro is for when you need more control:
+  avoid repeat pairings, keep certain people apart, spread leaders and save lists.
+</p>
 
             <div className="support-grid">
               <div className="support-box">
