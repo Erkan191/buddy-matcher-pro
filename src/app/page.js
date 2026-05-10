@@ -175,7 +175,7 @@ export default function HomePage() {
             <h1>Create fair groups in seconds</h1>
 
             <p className="hero-sub">
-  A smarter classroom group maker for teachers, teams and activities. Paste names,
+  A smarter group maker for teachers and activity leaders. Paste names,
   create random groups, avoid repeat pairings, keep certain people apart and spread
   group leaders across groups.
 </p>
