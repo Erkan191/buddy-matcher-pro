@@ -168,7 +168,7 @@ export default function HomePage() {
       </nav>
 
       <header className="hero-section">
-        <div className="section-wrap hero-wrap">
+  <div className="section-wrap hero-wrap hero-layout">
           <div className="hero-copy">
             <div className="hero-badge">Free · Fast · Private</div>
 
@@ -195,11 +195,40 @@ export default function HomePage() {
             </div>
 
             <ul className="hero-points">
-  <li>Paste from Excel or Google Sheets</li>
-  <li>Pairs, trios, or larger groups</li>
-  <li>Handles awkward leftovers automatically</li>
-  <li>Pro unlocks custom sizes, export and more</li>
-</ul>
+              <li>Paste from Excel or Google Sheets</li>
+              <li>Pairs, trios, or larger groups</li>
+              <li>Handles awkward leftovers automatically</li>
+              <li>Pro unlocks custom sizes, export and more</li>
+            </ul>
+          </div>
+
+          <div className="hero-preview" aria-hidden="true">
+            <div className="hero-preview-pill">
+              <span>🔒</span>
+              Saved locally in your browser
+            </div>
+
+            <div className="hero-preview-cards">
+              <div className="hero-mini-card">
+                <div className="hero-mini-icon">👥</div>
+                <div>
+                  <h3>Names</h3>
+                  <p>
+                    Paste or type names, one per line. Supports full classes or team lists.
+                  </p>
+                </div>
+              </div>
+
+              <div className="hero-mini-card">
+                <div className="hero-mini-icon">📈</div>
+                <div>
+                  <h3>Results</h3>
+                  <p>
+                    Get balanced groups instantly. Shuffle, regenerate or start again.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </header>

@@ -1,3 +1,5 @@
+import "./globals.css";
+
 export const metadata = {
   metadataBase: new URL("https://www.buddymatcher.co.uk"),
   title: {
@@ -45,3 +47,11 @@ export const metadata = {
       "Create fair random groups for classrooms, teams, workshops, events and clubs. Pairs, trios, larger groups, blocked pairs and group leaders.",
   },
 };
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
