@@ -111,19 +111,19 @@ export default function UpgradePage() {
     <main className="upgrade-page">
       <div className="upgrade-wrap">
         {/* HEADER */}
-        <h1>Stop wasting time grouping people</h1>
+        <h1>Make controlled groups without the extra admin</h1>
 
         <p className="upgrade-sub">
-          Buddy Matcher Pro gives you control — not just randomness.
+          Buddy Matcher Pro turns quick random grouping into a smarter group maker.
         </p>
 
         {/* PROBLEM */}
         <div className="upgrade-section">
           <h2>The problem</h2>
           <ul>
-            <li>Same people always end up together</li>
-            <li>You have to manually separate certain students</li>
-            <li>Some groups lack structure or leadership</li>
+            <li>Same people keep ending up together</li>
+            <li>You have to manually keep certain people apart</li>
+            <li>Some groups need leaders spread out fairly</li>
             <li>Grouping takes longer than it should</li>
           </ul>
         </div>
@@ -132,8 +132,8 @@ export default function UpgradePage() {
         <div className="upgrade-section highlight">
           <h2>The solution</h2>
           <p>
-            Buddy Matcher Pro lets you quickly create fair, controlled groups in seconds —
-            while still keeping the speed of random generation.
+            Buddy Matcher Pro helps you keep certain people apart, avoid repeat
+            pairings and spread leaders while still keeping the speed of random generation.
           </p>
         </div>
 
@@ -143,11 +143,11 @@ export default function UpgradePage() {
 
           <ul className="upgrade-features">
             <li>🚫 Don’t group specific people together</li>
+            <li>🔁 Avoid repeat pairings where possible</li>
             <li>⭐ Assign and spread group leaders</li>
+            <li>💾 Save and reuse lists</li>
             <li>👥 Groups of 4, 5, 6 and custom sizes</li>
-            <li>💾 Save and reuse class lists</li>
-            <li>📄 Export to CSV</li>
-            <li>🖨 Print clean group layouts</li>
+            <li>📄 Export to CSV and print clean layouts</li>
           </ul>
         </div>
 

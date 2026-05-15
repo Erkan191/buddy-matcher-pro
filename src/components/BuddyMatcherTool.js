@@ -8,6 +8,12 @@ const FREE_GROUP_SIZES = [2, 3];
 const PRO_GROUP_SIZES = [4, 5, 6];
 const STORAGE_KEY = "buddy_matcher_names_v2";
 const REPEAT_PAIRINGS_STORAGE_KEY = "buddy_matcher_repeat_pairings_v1";
+const POWER_USER_GENERATE_COUNT_STORAGE_KEY =
+  "buddy_matcher_generate_count_v1";
+const POWER_USER_NUDGE_DISMISSED_AT_STORAGE_KEY =
+  "buddy_matcher_power_nudge_dismissed_at_v1";
+const POWER_USER_NUDGE_THRESHOLD = 10;
+const POWER_USER_NUDGE_SUPPRESS_MS = 14 * 24 * 60 * 60 * 1000;
 
 const gradients = [
   "linear-gradient(135deg,#ff6b6b,#f06595)",
@@ -28,6 +34,17 @@ function getSessionId() {
   }
 
   return sessionId;
+}
+
+function getStoredNumber(key) {
+  if (typeof window === "undefined") return 0;
+
+  try {
+    const value = Number(window.localStorage.getItem(key));
+    return Number.isFinite(value) ? value : 0;
+  } catch {
+    return 0;
+  }
 }
 
 function parseNames(raw) {
@@ -283,6 +300,7 @@ export default function BuddyMatcherTool({
   const [showProModal, setShowProModal] = useState(false);
   const [lockedReason, setLockedReason] = useState("");
   const [avoidRepeats, setAvoidRepeats] = useState(false);
+  const [showPowerUserNudge, setShowPowerUserNudge] = useState(false);
 
   const [savedLists, setSavedLists] = useState([]);
   const [selectedSavedList, setSelectedSavedList] = useState("");
@@ -420,6 +438,85 @@ export default function BuddyMatcherTool({
     if (isPro) return true;
     openProModal(reason);
     return false;
+  }
+
+  async function trackPowerUserNudgeEvent(eventType, metadata = {}) {
+    try {
+      const sessionId = getSessionId();
+      if (!sessionId) return;
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      await supabase.from("usage_events").insert({
+        event_type: eventType,
+        session_id: sessionId,
+        user_id: user?.id ?? null,
+        metadata,
+      });
+    } catch (error) {
+      console.error("Could not track power-user nudge:", error);
+    }
+  }
+
+  function isPowerUserNudgeSuppressed() {
+    const dismissedAt = getStoredNumber(
+      POWER_USER_NUDGE_DISMISSED_AT_STORAGE_KEY
+    );
+
+    return (
+      dismissedAt > 0 &&
+      Date.now() - dismissedAt < POWER_USER_NUDGE_SUPPRESS_MS
+    );
+  }
+
+  function getPowerUserGenerateCount() {
+    return getStoredNumber(POWER_USER_GENERATE_COUNT_STORAGE_KEY);
+  }
+
+  function markPowerUserNudgeDismissed(eventType) {
+    try {
+      window.localStorage.setItem(
+        POWER_USER_NUDGE_DISMISSED_AT_STORAGE_KEY,
+        String(Date.now())
+      );
+    } catch {
+      // localStorage can fail in private browsing or if storage is full.
+    }
+
+    setShowPowerUserNudge(false);
+
+    void trackPowerUserNudgeEvent(eventType, {
+      generate_count: getPowerUserGenerateCount(),
+    });
+  }
+
+  function updatePowerUserNudge() {
+    if (isPro) return;
+
+    try {
+      const nextCount = getPowerUserGenerateCount() + 1;
+
+      window.localStorage.setItem(
+        POWER_USER_GENERATE_COUNT_STORAGE_KEY,
+        String(nextCount)
+      );
+
+      if (
+        nextCount >= POWER_USER_NUDGE_THRESHOLD &&
+        !showPowerUserNudge &&
+        !isPowerUserNudgeSuppressed()
+      ) {
+        setShowPowerUserNudge(true);
+
+        void trackPowerUserNudgeEvent("power_user_nudge_shown", {
+          generate_count: nextCount,
+        });
+      }
+    } catch {
+      // Tracking the local generate count should never block generation.
+    }
   }
 
   async function refreshSavedLists() {
@@ -648,6 +745,7 @@ export default function BuddyMatcherTool({
 
     setResults(finalGroups);
     saveRepeatPairings(names, finalGroups);
+    updatePowerUserNudge();
     scrollToResults();
 
     if (shouldAvoidRepeats && unavoidableRepeatCount > 0) {
@@ -1107,6 +1205,41 @@ export default function BuddyMatcherTool({
 
                         <div className="preview-box">{previewText}</div>
 
+            {showPowerUserNudge && !isPro && (
+              <div className="preview-box">
+                <p className="small-note">
+                  <strong>Looks like you use Buddy Matcher regularly.</strong>{" "}
+                  Pro helps you avoid repeat pairings, keep people apart and save lists.
+                </p>
+
+                <div className="pro-modal-actions">
+                  <Link
+                    href={
+                      isLoggedIn
+                        ? "/upgrade"
+                        : "/login?next=/upgrade&source=power_user_nudge"
+                    }
+                    className="btn btn-success btn-sm"
+                    onClick={() =>
+                      markPowerUserNudgeDismissed("power_user_nudge_clicked")
+                    }
+                  >
+                    See Pro
+                  </Link>
+
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={() =>
+                      markPowerUserNudgeDismissed("power_user_nudge_dismissed")
+                    }
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="smart-feature-grid">
               <button
                 type="button"
@@ -1480,19 +1613,19 @@ export default function BuddyMatcherTool({
             <h3>Get full control with Pro</h3>
 
             <p className="pro-modal-lead">
-              {lockedReason} Pro is for people who use Buddy Matcher regularly
-              and want faster, more controlled grouping.
+              {lockedReason} Pro is for people who want controlled grouping:
+              fewer repeat pairings, fewer awkward combinations and reusable lists.
             </p>
 
             <div className="pro-benefit-list">
               <div className="pro-benefit-item">
-                <span>👥</span>
-                <p>Make proper groups of 4, 5, 6 or any custom size</p>
+                <span>🚫</span>
+                <p>Keep specific people apart with “don’t group these two”</p>
               </div>
 
               <div className="pro-benefit-item">
-                <span>🚫</span>
-                <p>Keep specific people apart with “don’t group these two”</p>
+                <span>🔁</span>
+                <p>Avoid repeat pairings where possible</p>
               </div>
 
               <div className="pro-benefit-item">
@@ -1502,12 +1635,17 @@ export default function BuddyMatcherTool({
 
               <div className="pro-benefit-item">
                 <span>💾</span>
-                <p>Save lists so you do not retype names every time</p>
+                <p>Save reusable lists so you do not retype names every time</p>
               </div>
 
               <div className="pro-benefit-item">
-                <span>🖨️</span>
-                <p>Export, copy or print clean group layouts</p>
+                <span>👥</span>
+                <p>Make groups of 4, 5, 6 or any custom size</p>
+              </div>
+
+              <div className="pro-benefit-item">
+                <span>📄</span>
+                <p>Export or print clean group layouts when needed</p>
               </div>
             </div>
 

@@ -172,12 +172,12 @@ export default function HomePage() {
           <div className="hero-copy">
             <div className="hero-badge">Free · Fast · Private</div>
 
-            <h1>Create fair groups in seconds</h1>
+            <h1>Make smarter groups with more control</h1>
 
             <p className="hero-sub">
-  A smarter group maker for teachers and activity leaders. Paste names,
-  create random groups, avoid repeat pairings, keep certain people apart and spread
-  group leaders across groups.
+  A smart group maker for teachers, teams, workshops, clubs and coaches.
+  Paste names, make balanced groups, avoid repeat pairings, keep certain
+  people apart and spread group leaders across groups.
 </p>
 
             <div className="hero-actions">
@@ -191,14 +191,14 @@ export default function HomePage() {
             </div>
 
             <div className="hero-proof">
-              Used by teachers, team leaders and coaches
+              Used by teachers, team leaders, workshop hosts, clubs and coaches
             </div>
 
             <ul className="hero-points">
-              <li>Paste from Excel or Google Sheets</li>
-              <li>Pairs, trios, or larger groups</li>
-              <li>Handles awkward leftovers automatically</li>
-              <li>Pro unlocks custom sizes, export and more</li>
+              <li>Do not group specific people together</li>
+              <li>Avoid repeat pairings where possible</li>
+              <li>Pairs, trios, larger groups and awkward leftovers</li>
+              <li>Pro adds saved lists, leaders, export and print</li>
             </ul>
           </div>
 
@@ -250,10 +250,10 @@ export default function HomePage() {
 
             <div className="feature-grid">
   <div className="feature-box">
-    <h3>Fast random grouping</h3>
+    <h3>Smart group making</h3>
     <p>
-      Quickly create random student pairs, trios or larger groups for activities,
-      discussions and projects.
+      Quickly create balanced pairs, trios or larger groups for lessons,
+      activities, workshops, clubs and projects.
     </p>
   </div>
 
@@ -265,9 +265,10 @@ export default function HomePage() {
   </div>
 
   <div className="feature-box">
-    <h3>Smarter Pro controls</h3>
+    <h3>Controlled Pro groups</h3>
     <p>
-      Keep certain people apart and spread named group leaders across different groups.
+      Keep certain people apart, avoid repeat pairings and spread named group
+      leaders across different groups.
     </p>
   </div>
 
@@ -289,8 +290,8 @@ export default function HomePage() {
             <h2 className="section-title">Upgrade from random groups to controlled groups</h2>
 
 <p className="section-lead">
-  Free is great for quick random groups. Pro is for when you need more control:
-  avoid repeat pairings, keep certain people apart, spread leaders and save lists.
+  Free is great for quick groups. Pro is for when you need more control:
+  keep certain people apart, avoid repeat pairings, spread leaders and save lists.
 </p>
 
             <div className="support-grid">
@@ -317,9 +318,10 @@ export default function HomePage() {
 
   <ul className="pro-feature-list">
     <li>Don’t group specific people together</li>
+    <li>Avoid repeat pairings where possible</li>
     <li>Assign and spread group leaders</li>
+    <li>Save and reuse lists</li>
     <li>Groups of 4, 5, 6 and custom sizes</li>
-    <li>Save and reuse class lists</li>
     <li>Export to CSV and print clean layouts</li>
   </ul>
 
