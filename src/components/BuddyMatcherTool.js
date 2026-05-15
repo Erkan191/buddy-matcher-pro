@@ -7,6 +7,7 @@ import { supabase } from "@/supabaseClient";
 const FREE_GROUP_SIZES = [2, 3];
 const PRO_GROUP_SIZES = [4, 5, 6];
 const STORAGE_KEY = "buddy_matcher_names_v2";
+const REPEAT_PAIRINGS_STORAGE_KEY = "buddy_matcher_repeat_pairings_v1";
 
 const gradients = [
   "linear-gradient(135deg,#ff6b6b,#f06595)",
@@ -86,6 +87,66 @@ function normalizeName(name) {
 function pairKey(left, right) {
   const pair = [normalizeName(left), normalizeName(right)].sort();
   return `${pair[0]}|||${pair[1]}`;
+}
+
+function rosterKey(names) {
+  return names.map(normalizeName).sort().join("|||");
+}
+
+function getGroupPairKeys(groups) {
+  const keys = [];
+
+  groups.forEach((group) => {
+    for (let i = 0; i < group.length; i += 1) {
+      for (let j = i + 1; j < group.length; j += 1) {
+        keys.push(pairKey(group[i], group[j]));
+      }
+    }
+  });
+
+  return keys;
+}
+
+function countRepeatPairings(groups, previousPairSet) {
+  return getGroupPairKeys(groups).filter((key) =>
+    previousPairSet.has(key)
+  ).length;
+}
+
+function readRepeatPairings() {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const saved = window.localStorage.getItem(REPEAT_PAIRINGS_STORAGE_KEY);
+    if (!saved) return {};
+
+    const parsed = JSON.parse(saved);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function getPreviousPairSet(names) {
+  const saved = readRepeatPairings()[rosterKey(names)];
+  return new Set(Array.isArray(saved) ? saved : []);
+}
+
+function saveRepeatPairings(names, groups) {
+  if (typeof window === "undefined") return;
+
+  try {
+    const saved = readRepeatPairings();
+    saved[rosterKey(names)] = getGroupPairKeys(groups);
+    window.localStorage.setItem(
+      REPEAT_PAIRINGS_STORAGE_KEY,
+      JSON.stringify(saved)
+    );
+  } catch {
+    // localStorage can fail in private browsing or if storage is full.
+  }
 }
 
 function buildGroupSizes(totalNames, groupSize) {
@@ -517,8 +578,44 @@ export default function BuddyMatcherTool({
     );
 
     let finalGroups = null;
+    let unavoidableRepeatCount = 0;
+    const shouldAvoidRepeats = avoidRepeats && isPro;
 
-    if (!activeBlockedPairs.length && !activeLeaderNames.length) {
+    if (shouldAvoidRepeats) {
+      const previousPairSet = getPreviousPairSet(names);
+      let bestGroups = null;
+      let bestRepeatCount = Infinity;
+
+      for (let attempt = 0; attempt < 300; attempt += 1) {
+        const candidateGroups =
+          !activeBlockedPairs.length && !activeLeaderNames.length
+            ? buildGroups(shuffleArray(names), selectedSize)
+            : tryBuildSmartGroups({
+                names: shuffleArray(names),
+                selectedSize,
+                leaderNames: activeLeaderNames,
+                blockedPairs: activeBlockedPairs,
+              });
+
+        if (!candidateGroups) continue;
+
+        const candidateRepeatCount = countRepeatPairings(
+          candidateGroups,
+          previousPairSet
+        );
+
+        if (candidateRepeatCount < bestRepeatCount) {
+          bestGroups = candidateGroups;
+          bestRepeatCount = candidateRepeatCount;
+        }
+
+        if (candidateRepeatCount === 0) break;
+      }
+
+      finalGroups = bestGroups;
+      unavoidableRepeatCount =
+        bestRepeatCount === Infinity ? 0 : bestRepeatCount;
+    } else if (!activeBlockedPairs.length && !activeLeaderNames.length) {
       finalGroups = buildGroups(shuffleArray(names), selectedSize);
     } else {
       for (let attempt = 0; attempt < 300; attempt += 1) {
@@ -541,8 +638,26 @@ export default function BuddyMatcherTool({
       }
     }
 
+    if (!finalGroups) {
+      openNotice(
+        "Couldn't satisfy all rules",
+        "Try removing some blocked pairs, using fewer group leaders, or changing the group size."
+      );
+      return;
+    }
+
     setResults(finalGroups);
+    saveRepeatPairings(names, finalGroups);
     scrollToResults();
+
+    if (shouldAvoidRepeats && unavoidableRepeatCount > 0) {
+      openNotice(
+        "Some repeats were unavoidable",
+        `${unavoidableRepeatCount} repeat pairing${
+          unavoidableRepeatCount === 1 ? " was" : "s were"
+        } still needed for this list.`
+      );
+    }
 
     void (async () => {
       const sessionId = getSessionId();
@@ -803,10 +918,6 @@ export default function BuddyMatcherTool({
     if (!requirePro("No-repeat pairing history is a Pro feature.")) return;
 
     setAvoidRepeats(true);
-    openNotice(
-      "Coming next",
-      "No-repeat pairing history will be wired up next."
-    );
   }
 
     function handleRandomPick() {
