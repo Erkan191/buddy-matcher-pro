@@ -3,12 +3,15 @@ import "./globals.css";
 export const metadata = {
   metadataBase: new URL("https://www.buddymatcher.co.uk"),
   title: {
-    default: "Buddy Matcher | Random Group Generator",
+    default: "Buddy Matcher | Smart Group Maker",
     template: "%s | Buddy Matcher",
   },
   description:
-    "Create fair, controlled random groups in seconds. Perfect for classrooms, teams, workshops, events, clubs and coaches. Make pairs, trios or larger groups, avoid repeats, keep people apart and spread group leaders.",
+    "Make smarter, controlled groups in seconds. Keep certain people apart, avoid repeat pairings, spread group leaders and save lists for classrooms, teams, workshops, clubs and coaches.",
   keywords: [
+    "smart group maker",
+    "controlled group maker",
+    "controlled group generator",
     "random group generator",
     "random pair generator",
     "random team generator",
@@ -26,25 +29,28 @@ export const metadata = {
     "make random groups",
     "create random teams",
     "fair group generator",
-    "controlled group maker",
+    "smart team generator",
     "avoid repeat pairings",
+    "avoid repeat groups",
+    "keep people apart",
     "don't group these two",
     "group leaders",
+    "save class lists",
     "buddy matcher",
   ],
   openGraph: {
-    title: "Buddy Matcher | Random Group Generator",
+    title: "Buddy Matcher | Smart Group Maker",
     description:
-      "Create fair random groups for classrooms, teams, workshops, events and clubs. Make pairs, trios, larger groups, avoid repeats, keep people apart and spread leaders.",
+      "Make smarter, controlled groups for classrooms, teams, workshops, events and clubs. Keep certain people apart, avoid repeat pairings, spread leaders and save lists.",
     url: "https://www.buddymatcher.co.uk",
     siteName: "Buddy Matcher",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "Buddy Matcher | Random Group Generator",
+    title: "Buddy Matcher | Smart Group Maker",
     description:
-      "Create fair random groups for classrooms, teams, workshops, events and clubs. Pairs, trios, larger groups, blocked pairs and group leaders.",
+      "Make smarter, controlled groups for classrooms, teams, workshops, clubs and coaches. Avoid repeat pairings, keep people apart and spread leaders.",
   },
 };
 
