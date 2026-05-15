@@ -5,7 +5,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function POST(request) {
   try {
-    const { userId } = await request.json();
+    const { userId, sessionId } = await request.json();
 
     if (!userId) {
       return NextResponse.json(
@@ -32,6 +32,9 @@ export async function POST(request) {
         },
       ],
       client_reference_id: userId,
+      metadata: {
+        session_id: sessionId || "",
+      },
       success_url: `${baseUrl}/upgrade/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/upgrade`,
     });

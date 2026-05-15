@@ -1515,6 +1515,10 @@ export default function BuddyMatcherTool({
               No subscription. Pay once and use it forever.
             </p>
 
+            <p className="pro-modal-small">
+              Creating an account is free. Pro still costs £3.99 one-off before it unlocks.
+            </p>
+
             <div className="pro-modal-actions">
               {isLoggedIn ? (
                 <Link
@@ -1546,7 +1550,7 @@ export default function BuddyMatcherTool({
                 </Link>
               ) : (
                 <Link
-                  href="/login"
+                  href="/login?next=/upgrade&source=pro_modal"
                   className="btn btn-success"
                   onClick={() => {
                     void (async () => {
@@ -1559,7 +1563,7 @@ export default function BuddyMatcherTool({
                         user_id: null,
                         metadata: {
                           source: "pro_modal",
-                          cta: "log_in_to_unlock_pro",
+                          cta: "log_in_to_continue_to_upgrade",
                           reason: lockedReason,
                         },
                       });
@@ -1571,7 +1575,27 @@ export default function BuddyMatcherTool({
               )}
 
               {!isLoggedIn && (
-                <Link href="/upgrade" className="btn btn-outline-secondary">
+                <Link
+                  href="/upgrade"
+                  className="btn btn-outline-secondary"
+                  onClick={() => {
+                    void (async () => {
+                      const sessionId = getSessionId();
+                      if (!sessionId) return;
+
+                      await supabase.from("usage_events").insert({
+                        event_type: "upgrade_clicked",
+                        session_id: sessionId,
+                        user_id: null,
+                        metadata: {
+                          source: "pro_modal",
+                          cta: "see_pro_features",
+                          reason: lockedReason,
+                        },
+                      });
+                    })();
+                  }}
+                >
                   See Pro features
                 </Link>
               )}

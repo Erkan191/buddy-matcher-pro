@@ -1,22 +1,72 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/supabaseClient";
+
+function getSessionId() {
+  if (typeof window === "undefined") return "";
+
+  let sessionId = window.localStorage.getItem("bm_session_id");
+
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    window.localStorage.setItem("bm_session_id", sessionId);
+  }
+
+  return sessionId;
+}
+
+async function trackUsageEvent(eventType, metadata = {}, userId) {
+  try {
+    const sessionId = getSessionId();
+    if (!sessionId) return;
+
+    let resolvedUserId = userId;
+
+    if (resolvedUserId === undefined) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      resolvedUserId = user?.id ?? null;
+    }
+
+    await supabase.from("usage_events").insert({
+      event_type: eventType,
+      session_id: sessionId,
+      user_id: resolvedUserId ?? null,
+      metadata,
+    });
+  } catch (error) {
+    console.error("Could not track usage event:", error);
+  }
+}
 
 export default function UpgradePage() {
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    void trackUsageEvent("upgrade_page_view", {
+      path: window.location.pathname,
+    });
+  }, []);
+
   async function handleUpgrade() {
     try {
       setIsLoading(true);
+      const sessionId = getSessionId();
+
+      await trackUsageEvent("checkout_clicked", {
+        source: "upgrade_page",
+      });
 
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (!user) {
-        window.location.href = "/login";
+        window.location.href = "/login?next=/upgrade&source=upgrade_page";
         return;
       }
 
@@ -27,6 +77,7 @@ export default function UpgradePage() {
         },
         body: JSON.stringify({
           userId: user.id,
+          sessionId,
         }),
       });
 
@@ -36,9 +87,21 @@ export default function UpgradePage() {
         throw new Error(data?.error || "Could not start checkout.");
       }
 
+      await trackUsageEvent(
+        "checkout_redirect_started",
+        {
+          source: "upgrade_page",
+        },
+        user.id
+      );
+
       window.location.href = data.url;
     } catch (error) {
       console.error(error);
+      await trackUsageEvent("checkout_error", {
+        source: "upgrade_page",
+        message: error.message,
+      });
       alert("Could not start checkout. Please try again.");
       setIsLoading(false);
     }

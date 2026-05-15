@@ -52,6 +52,23 @@ export async function POST(request) {
           console.error("Supabase update error:", error);
           return NextResponse.json({ error: "Database update failed" }, { status: 500 });
         }
+
+        const { error: trackingError } = await supabaseAdmin
+          .from("usage_events")
+          .insert({
+            event_type: "payment_success",
+            session_id: session.metadata?.session_id || null,
+            user_id: userId,
+            metadata: {
+              stripe_checkout_session_id: session.id,
+              amount_total: session.amount_total,
+              currency: session.currency,
+            },
+          });
+
+        if (trackingError) {
+          console.error("Payment success tracking error:", trackingError);
+        }
       }
     }
 
