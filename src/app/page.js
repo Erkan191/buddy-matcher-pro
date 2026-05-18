@@ -5,6 +5,7 @@ import Link from "next/link";
 import BuddyMatcherTool from "@/components/BuddyMatcherTool";
 import { supabase } from "@/supabaseClient";
 import { getAccountStatus } from "@/lib/getAccountStatus";
+import { teacherResourceLinks } from "@/lib/teacherResourceLinks";
 
 export default function HomePage() {
   const [userEmail, setUserEmail] = useState("");
@@ -391,6 +392,32 @@ export default function HomePage() {
     </div>
   </div>
 </section>
+
+      <section className="content-section teacher-resources-home">
+        <div className="section-wrap">
+          <div className="section-card">
+            <h2 className="section-title">Teacher resources</h2>
+            <p className="section-lead">
+              Practical guides for making student pairs and groups, reducing
+              repeat partners, mixing friendship groups and keeping classroom
+              grouping quick.
+            </p>
+
+            <div className="resource-link-grid">
+              {teacherResourceLinks.map((resource) => (
+                <Link
+                  key={resource.href}
+                  href={resource.href}
+                  className="resource-link-card"
+                >
+                  <strong>{resource.title}</strong>
+                  <span>{resource.summary}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
       <footer className="site-footer" id="footer">
         <div className="section-wrap footer-wrap">
