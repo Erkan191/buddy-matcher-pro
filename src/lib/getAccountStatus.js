@@ -33,13 +33,31 @@ export async function getAccountStatus() {
           email: user.email,
           is_pro: false,
         },
-        { onConflict: "id" }
+        { onConflict: "id", ignoreDuplicates: true }
       )
       .select("email, is_pro")
-      .single();
+      .maybeSingle();
 
     if (upsertError) {
       throw upsertError;
+    }
+
+    if (!insertedUser) {
+      const { data: resolvedUser, error: resolveError } = await supabase
+        .from("users")
+        .select("email, is_pro")
+        .eq("id", user.id)
+        .single();
+
+      if (resolveError) {
+        throw resolveError;
+      }
+
+      return {
+        user,
+        email: resolvedUser.email || user.email || "",
+        isPro: !!resolvedUser.is_pro,
+      };
     }
 
     return {

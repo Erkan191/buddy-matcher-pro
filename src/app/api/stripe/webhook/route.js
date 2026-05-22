@@ -43,13 +43,22 @@ export async function POST(request) {
       const userId = session.client_reference_id;
 
       if (userId) {
+        const userUpdate = {
+          id: userId,
+          is_pro: true,
+        };
+        const customerEmail = session.customer_details?.email?.trim();
+
+        if (customerEmail) {
+          userUpdate.email = customerEmail;
+        }
+
         const { error } = await supabaseAdmin
           .from("users")
-          .update({ is_pro: true })
-          .eq("id", userId);
+          .upsert(userUpdate, { onConflict: "id" });
 
         if (error) {
-          console.error("Supabase update error:", error);
+          console.error("Supabase upsert error:", error);
           return NextResponse.json({ error: "Database update failed" }, { status: 500 });
         }
 
