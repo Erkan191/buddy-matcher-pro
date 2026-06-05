@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/supabaseClient";
 
@@ -26,14 +26,18 @@ const gradients = [
 function getSessionId() {
   if (typeof window === "undefined") return "";
 
-  let sessionId = window.localStorage.getItem("bm_session_id");
+  try {
+    let sessionId = window.localStorage.getItem("bm_session_id");
 
-  if (!sessionId) {
-    sessionId = crypto.randomUUID();
-    window.localStorage.setItem("bm_session_id", sessionId);
+    if (!sessionId) {
+      sessionId = crypto.randomUUID();
+      window.localStorage.setItem("bm_session_id", sessionId);
+    }
+
+    return sessionId;
+  } catch {
+    return "";
   }
-
-  return sessionId;
 }
 
 function getStoredNumber(key) {
@@ -45,6 +49,15 @@ function getStoredNumber(key) {
   } catch {
     return 0;
   }
+}
+
+function getLocalDateKey(timestamp) {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function parseNames(raw) {
@@ -301,6 +314,15 @@ export default function BuddyMatcherTool({
   const [lockedReason, setLockedReason] = useState("");
   const [avoidRepeats, setAvoidRepeats] = useState(false);
   const [showPowerUserNudge, setShowPowerUserNudge] = useState(false);
+  const [generateInFlight, setGenerateInFlight] = useState(false);
+  const [freeLimitModal, setFreeLimitModal] = useState({
+    open: false,
+    weeklyCount: 0,
+    emergencyCountToday: 0,
+    emergencyRemaining: 0,
+    selectedSize: 2,
+    totalNames: 0,
+  });
 
   const [savedLists, setSavedLists] = useState([]);
   const [selectedSavedList, setSelectedSavedList] = useState("");
@@ -330,6 +352,7 @@ export default function BuddyMatcherTool({
   const [leaderNames, setLeaderNames] = useState([]);
   const [leadersModalOpen, setLeadersModalOpen] = useState(false);
   const [leadersDraft, setLeadersDraft] = useState("");
+  const generateInFlightRef = useRef(false);
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -440,7 +463,7 @@ export default function BuddyMatcherTool({
     return false;
   }
 
-  async function trackPowerUserNudgeEvent(eventType, metadata = {}) {
+  async function trackUsageEvent(eventType, metadata = {}) {
     try {
       const sessionId = getSessionId();
       if (!sessionId) return;
@@ -456,8 +479,129 @@ export default function BuddyMatcherTool({
         metadata,
       });
     } catch (error) {
-      console.error("Could not track power-user nudge:", error);
+      console.error("Could not track usage event:", error);
     }
+  }
+
+  async function postFreeGenerateUsage({
+    action,
+    eventType = "",
+    metadata = {},
+    useEmergencyOverride = false,
+  }) {
+    const sessionId = getSessionId();
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
+
+    if (error) {
+      throw error;
+    }
+
+    const headers = {
+      "Content-Type": "application/json",
+    };
+
+    if (session?.access_token) {
+      headers.Authorization = `Bearer ${session.access_token}`;
+    }
+
+    const response = await fetch("/api/usage/free-generate", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        action,
+        eventType,
+        sessionId,
+        localDate: getLocalDateKey(Date.now()),
+        metadata,
+        useEmergencyOverride,
+      }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "Free generate usage request failed");
+    }
+
+    return data;
+  }
+
+  async function checkFreeGenerateAllowance({
+    useEmergencyOverride,
+    metadata,
+  }) {
+    return await postFreeGenerateUsage({
+      action: "check",
+      metadata,
+      useEmergencyOverride,
+    });
+  }
+
+  async function recordSuccessfulFreeGenerate(metadata = {}) {
+    return await postFreeGenerateUsage({
+      action: "record",
+      metadata,
+    });
+  }
+
+  function trackFreeLimitEvent(eventType, metadata = {}) {
+    void postFreeGenerateUsage({
+      action: "track",
+      eventType,
+      metadata,
+    }).catch((error) => {
+      console.error("Could not track free generate limit event:", error);
+    });
+  }
+
+  function openFreeLimitModal(status, metadata) {
+    setFreeLimitModal({
+      open: true,
+      weeklyCount: status.weeklyCount,
+      emergencyCountToday: status.emergencyCountToday,
+      emergencyRemaining: status.emergencyRemaining,
+      selectedSize: metadata.selected_size,
+      totalNames: metadata.total_names,
+    });
+  }
+
+  function closeFreeLimitModal(eventType) {
+    const metadata = {
+      selected_size: freeLimitModal.selectedSize,
+      total_names: freeLimitModal.totalNames,
+      weekly_count: freeLimitModal.weeklyCount,
+      emergency_count_today: freeLimitModal.emergencyCountToday,
+      emergency_remaining: freeLimitModal.emergencyRemaining,
+    };
+
+    setFreeLimitModal((prev) => ({
+      ...prev,
+      open: false,
+    }));
+
+    if (eventType) {
+      trackFreeLimitEvent(eventType, metadata);
+    }
+  }
+
+  function handleFreeLimitUpgradeClicked() {
+    closeFreeLimitModal("free_generate_limit_upgrade_clicked");
+  }
+
+  function handleFreeLimitMaybeLaterClicked() {
+    closeFreeLimitModal("free_generate_limit_maybe_later_clicked");
+  }
+
+  function handleEmergencyGenerate() {
+    closeFreeLimitModal();
+    void handleGenerate({ useEmergencyOverride: true });
+  }
+
+  async function trackPowerUserNudgeEvent(eventType, metadata = {}) {
+    await trackUsageEvent(eventType, metadata);
   }
 
   function isPowerUserNudgeSuppressed() {
@@ -644,7 +788,14 @@ export default function BuddyMatcherTool({
     });
   }
 
-  function handleGenerate() {
+  async function handleGenerate(options = {}) {
+    if (generateInFlightRef.current) return;
+
+    generateInFlightRef.current = true;
+    setGenerateInFlight(true);
+
+    try {
+    const useEmergencyOverride = options?.useEmergencyOverride === true;
     const names = currentNames;
 
     if (names.length < 2) {
@@ -661,6 +812,36 @@ export default function BuddyMatcherTool({
 
     if (selectedSize > 3 && !isPro) {
       openProModal(`Groups of ${selectedSize} are a Pro feature.`);
+      return;
+    }
+
+    if (!authReady) {
+      openNotice("Checking account", "Please try again in a second.");
+      return;
+    }
+
+    let freeUsageStatus;
+    const allowanceMetadata = {
+      selected_size: selectedSize,
+      total_names: names.length,
+    };
+
+    try {
+      freeUsageStatus = await checkFreeGenerateAllowance({
+        useEmergencyOverride,
+        metadata: allowanceMetadata,
+      });
+    } catch (error) {
+      console.error("Could not check free generate allowance:", error);
+      openNotice(
+        "Could not check your free allowance",
+        "Please try again."
+      );
+      return;
+    }
+
+    if (!freeUsageStatus.canGenerate) {
+      openFreeLimitModal(freeUsageStatus, allowanceMetadata);
       return;
     }
 
@@ -743,6 +924,36 @@ export default function BuddyMatcherTool({
       return;
     }
 
+    const generateMetadata = {
+      selected_size: selectedSize,
+      used_custom_size: useCustom,
+      avoid_repeats: avoidRepeats,
+      total_names: names.length,
+      total_groups: finalGroups.length,
+      blocked_pairs_count: activeBlockedPairs.length,
+      leader_count: activeLeaderNames.length,
+      free_usage_mode: freeUsageStatus.freeUsageMode,
+    };
+
+    if (freeUsageStatus.freeUsageMode !== "pro") {
+      try {
+        const recordedUsageStatus = await recordSuccessfulFreeGenerate({
+          ...generateMetadata,
+          checked_free_usage_mode: freeUsageStatus.freeUsageMode,
+        });
+
+        generateMetadata.free_usage_mode =
+          recordedUsageStatus.freeUsageMode || generateMetadata.free_usage_mode;
+      } catch (error) {
+        console.error("Could not record free generate usage:", error);
+        openNotice(
+          "Could not record your free generation",
+          "Please try again."
+        );
+        return;
+      }
+    }
+
     setResults(finalGroups);
     saveRepeatPairings(names, finalGroups);
     updatePowerUserNudge();
@@ -757,29 +968,11 @@ export default function BuddyMatcherTool({
       );
     }
 
-    void (async () => {
-      const sessionId = getSessionId();
-      if (!sessionId) return;
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      await supabase.from("usage_events").insert({
-        event_type: "generate_groups",
-        session_id: sessionId,
-        user_id: user?.id ?? null,
-        metadata: {
-          selected_size: selectedSize,
-          used_custom_size: useCustom,
-          avoid_repeats: avoidRepeats,
-          total_names: names.length,
-          total_groups: finalGroups.length,
-          blocked_pairs_count: activeBlockedPairs.length,
-          leader_count: activeLeaderNames.length,
-        },
-      });
-    })();
+    void trackUsageEvent("generate_groups", generateMetadata);
+    } finally {
+      generateInFlightRef.current = false;
+      setGenerateInFlight(false);
+    }
   }
 
   function handleCopy() {
@@ -1293,6 +1486,7 @@ export default function BuddyMatcherTool({
                 className="btn btn-success"
                 type="button"
                 onClick={handleGenerate}
+                disabled={generateInFlight}
               >
                 Generate groups
               </button>
@@ -1597,6 +1791,72 @@ export default function BuddyMatcherTool({
                 onClick={closeConfirm}
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {freeLimitModal.open && !isPro && (
+        <div className="pro-modal-backdrop">
+          <div className="pro-modal">
+            <div className="pro-modal-badge">Buddy Matcher</div>
+
+            <div className="pro-modal-price-pill">£3.99 one-off</div>
+
+            <h3>You&apos;ve used your 30 free group generations this week.</h3>
+
+            <p className="pro-modal-lead">
+              Buddy Matcher is free for occasional use. Regular users can
+              upgrade to Pro for unlimited generating, saved lists, avoid repeat
+              pairings, blocked pairs and group leaders.
+            </p>
+
+            <p className="pro-modal-small">Pro is £3.99 one-off.</p>
+
+            {freeLimitModal.emergencyRemaining > 0 ? (
+              <p className="pro-modal-small">
+                You have {freeLimitModal.emergencyRemaining} emergency generate
+                {freeLimitModal.emergencyRemaining === 1 ? "" : "s"} left today.
+              </p>
+            ) : (
+              <p className="pro-modal-small">
+                You&apos;ve used today&apos;s emergency generations. You can
+                generate again when your rolling 7-day allowance frees up, or
+                upgrade to Pro.
+              </p>
+            )}
+
+            <div className="pro-modal-actions">
+              <Link
+                href={
+                  isLoggedIn
+                    ? "/upgrade"
+                    : "/login?next=/upgrade&source=free_generate_limit"
+                }
+                className="btn btn-success"
+                onClick={handleFreeLimitUpgradeClicked}
+              >
+                Upgrade to Pro
+              </Link>
+
+              {freeLimitModal.emergencyRemaining > 0 && (
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={handleEmergencyGenerate}
+                  disabled={generateInFlight}
+                >
+                  Use emergency generate
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={handleFreeLimitMaybeLaterClicked}
+              >
+                {freeLimitModal.emergencyRemaining > 0 ? "Maybe later" : "Close"}
               </button>
             </div>
           </div>
