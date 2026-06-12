@@ -310,6 +310,9 @@ export default function BuddyMatcherTool({
   const [useCustom, setUseCustom] = useState(false);
   const [showNames, setShowNames] = useState(false);
   const [results, setResults] = useState([]);
+  const [projectorModeOpen, setProjectorModeOpen] = useState(false);
+  const [projectorFullscreenEnabled, setProjectorFullscreenEnabled] =
+    useState(false);
   const [showProModal, setShowProModal] = useState(false);
   const [lockedReason, setLockedReason] = useState("");
   const [avoidRepeats, setAvoidRepeats] = useState(false);
@@ -353,6 +356,7 @@ export default function BuddyMatcherTool({
   const [leadersModalOpen, setLeadersModalOpen] = useState(false);
   const [leadersDraft, setLeadersDraft] = useState("");
   const generateInFlightRef = useRef(false);
+  const projectorViewRef = useRef(null);
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -364,6 +368,10 @@ export default function BuddyMatcherTool({
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, rawInput);
   }, [rawInput]);
+
+  useEffect(() => {
+    setProjectorFullscreenEnabled(Boolean(document.fullscreenEnabled));
+  }, []);
 
     useEffect(() => {
     async function trackPageView() {
@@ -1200,6 +1208,45 @@ export default function BuddyMatcherTool({
     window.print();
   }
 
+  function handleOpenProjectorMode() {
+    if (!requirePro("Projector Mode / Student View is a Pro feature.")) return;
+
+    if (!results.length) {
+      openNotice("Nothing to show", "Generate some groups first.");
+      return;
+    }
+
+    setProjectorModeOpen(true);
+  }
+
+  async function handleCloseProjectorMode() {
+    if (
+      document.fullscreenElement === projectorViewRef.current &&
+      document.exitFullscreen
+    ) {
+      try {
+        await document.exitFullscreen();
+      } catch {
+        // Ignore browser fullscreen exit failures.
+      }
+    }
+
+    setProjectorModeOpen(false);
+  }
+
+  async function handleProjectorFullscreen() {
+    if (!projectorViewRef.current?.requestFullscreen) return;
+
+    try {
+      await projectorViewRef.current.requestFullscreen();
+    } catch {
+      openNotice(
+        "Fullscreen unavailable",
+        "Your browser could not open fullscreen mode."
+      );
+    }
+  }
+
   function handleAvoidRepeatsChange(e) {
     if (!e.target.checked) {
       setAvoidRepeats(false);
@@ -1333,10 +1380,12 @@ export default function BuddyMatcherTool({
                 >
                   <option value="2">2 - Pairs</option>
                   <option value="3">3 - Trios</option>
-                  <option value="4">4 - Pro</option>
-                  <option value="5">5 - Pro</option>
-                  <option value="6">6 - Pro</option>
-                  <option value="custom">Custom - Pro</option>
+                  <option value="4">{isPro ? "4" : "4 - Pro"}</option>
+                  <option value="5">{isPro ? "5" : "5 - Pro"}</option>
+                  <option value="6">{isPro ? "6" : "6 - Pro"}</option>
+                  <option value="custom">
+                    {isPro ? "Custom" : "Custom - Pro"}
+                  </option>
                 </select>
               </div>
 
@@ -1596,6 +1645,14 @@ export default function BuddyMatcherTool({
                 <button
                   className="btn btn-outline-success btn-sm"
                   type="button"
+                  onClick={handleOpenProjectorMode}
+                >
+                  Student View
+                </button>
+
+                <button
+                  className="btn btn-outline-success btn-sm"
+                  type="button"
                   onClick={handlePrint}
                 >
                   Print
@@ -1644,6 +1701,95 @@ export default function BuddyMatcherTool({
           </div>
         </div>
       </div>
+
+      {projectorModeOpen && (
+        <div
+          ref={projectorViewRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Student View"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1100,
+            overflow: "auto",
+            background: "#f7fbf8",
+            padding: "1rem",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: "1200px",
+              margin: "0 auto",
+            }}
+          >
+            <div
+              className="tool-header"
+              style={{
+                background: "#fff",
+                border: "1px solid rgba(16, 24, 40, 0.06)",
+                borderRadius: "18px",
+                boxShadow: "var(--shadow-1)",
+                padding: "1rem",
+              }}
+            >
+              <div>
+                <h2>Student View</h2>
+                <p>Final groups</p>
+              </div>
+
+              <div className="pro-modal-actions" style={{ marginTop: 0 }}>
+                {projectorFullscreenEnabled && (
+                  <button
+                    type="button"
+                    className="btn btn-outline-success"
+                    onClick={handleProjectorFullscreen}
+                  >
+                    Fullscreen
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={handleCloseProjectorMode}
+                >
+                  Back
+                </button>
+              </div>
+            </div>
+
+            <div
+              className="matches-grid"
+              style={{
+                marginTop: "1rem",
+                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              }}
+            >
+              {results.map((group, groupIndex) => (
+                <div key={`projector-group-${groupIndex}`} className="group-card">
+                  <div className="group-label">Group {groupIndex + 1}</div>
+
+                  <div>
+                    {group.map((name, nameIndex) => (
+                      <span
+                        key={`${name}-${nameIndex}`}
+                        className="name-pill"
+                        style={{
+                          background:
+                            gradients[(groupIndex + nameIndex) % gradients.length],
+                        }}
+                      >
+                        {name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {blockedPairsModalOpen && (
         <div className="pro-modal-backdrop">
