@@ -375,6 +375,13 @@ img {
   color: var(--text-2);
 }
 
+.results-helper {
+  margin: 0.35rem 0 0;
+  color: var(--text-2);
+  font-size: 0.9rem;
+  max-width: 460px;
+}
+
 .results-actions {
   display: flex;
   gap: 0.5rem;
@@ -443,6 +450,10 @@ img {
   padding: 1.25rem;
   color: var(--text-2);
   text-align: center;
+}
+
+.buddy-print-results {
+  display: none;
 }
 
 .content-section {
@@ -1605,5 +1616,95 @@ img {
 
   .teacher-use-list {
     grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  @page {
+    margin: 0.5in;
+  }
+
+  body.buddy-printing-groups,
+  body.buddy-printing-groups .site-shell {
+    background: #fff !important;
+    color: #111827 !important;
+  }
+
+  body.buddy-printing-groups .site-navbar,
+  body.buddy-printing-groups .hero-section,
+  body.buddy-printing-groups .content-section,
+  body.buddy-printing-groups .site-footer,
+  body.buddy-printing-groups .tool-shell > .tool-header,
+  body.buddy-printing-groups .tool-grid-two > .tool-card:first-child,
+  body.buddy-printing-groups .results-top,
+  body.buddy-printing-groups .names-list,
+  body.buddy-printing-groups #matches,
+  body.buddy-printing-groups #empty-state,
+  body.buddy-printing-groups .student-view-dialog,
+  body.buddy-printing-groups .pro-modal-backdrop {
+    display: none !important;
+  }
+
+  body.buddy-printing-groups .site-shell,
+  body.buddy-printing-groups .tool-section,
+  body.buddy-printing-groups .section-wrap,
+  body.buddy-printing-groups .tool-shell,
+  body.buddy-printing-groups .tool-grid-two,
+  body.buddy-printing-groups .results-card {
+    display: block !important;
+    width: auto !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.buddy-printing-groups .buddy-print-results {
+    display: block !important;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  body.buddy-printing-groups .buddy-print-results h1 {
+    margin: 0 0 18pt;
+    color: #111827;
+    font-size: 22pt;
+    line-height: 1.2;
+  }
+
+  body.buddy-printing-groups .buddy-print-groups {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12pt;
+  }
+
+  body.buddy-printing-groups .buddy-print-group {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border: 1px solid #d1d5db;
+    padding: 10pt;
+  }
+
+  body.buddy-printing-groups .buddy-print-group h2 {
+    margin: 0 0 6pt;
+    color: #111827;
+    font-size: 13pt;
+    line-height: 1.25;
+  }
+
+  body.buddy-printing-groups .buddy-print-group ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  body.buddy-printing-groups .buddy-print-group li {
+    color: #111827;
+    font-size: 11pt;
+    line-height: 1.45;
   }
 }

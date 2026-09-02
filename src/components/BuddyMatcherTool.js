@@ -963,7 +963,6 @@ export default function BuddyMatcherTool({
     }
 
     setResults(finalGroups);
-    saveRepeatPairings(names, finalGroups);
     updatePowerUserNudge();
     scrollToResults();
 
@@ -1205,7 +1204,34 @@ export default function BuddyMatcherTool({
 
     if (!requirePro("Print / presentation mode is a Pro feature.")) return;
 
+    const printClassName = "buddy-printing-groups";
+    document.body.classList.add(printClassName);
+
+    window.addEventListener(
+      "afterprint",
+      () => {
+        document.body.classList.remove(printClassName);
+      },
+      { once: true }
+    );
+
     window.print();
+  }
+
+  function handleMarkAsUsed() {
+    if (!results.length) {
+      openNotice("Nothing to mark", "Generate some groups first.");
+      return;
+    }
+
+    if (!requirePro("No-repeat pairing history is a Pro feature.")) return;
+
+    const names = dedupeNames(results.flat());
+    saveRepeatPairings(names, results);
+    openNotice(
+      "Grouping marked as used",
+      "Avoid repeats will use this next time."
+    );
   }
 
   function handleOpenProjectorMode() {
@@ -1441,8 +1467,7 @@ export default function BuddyMatcherTool({
                 onChange={handleAvoidRepeatsChange}
               />
               <label className="form-check-label" htmlFor="avoid-repeats">
-                Avoid repeating the last grouping where possible
-              </label>
+Avoid repeat pairings from the grouping marked as used              </label>
             </div>
 
                         <div className="preview-box">{previewText}</div>
@@ -1612,6 +1637,9 @@ export default function BuddyMatcherTool({
               <div>
                 <h3 className="results-title">Results</h3>
                 <p className="results-sub">Copy, download or share your groups.</p>
+                <p className="results-helper">
+                  Avoid repeats uses the grouping you mark as used. Trial generations are not saved.
+                </p>
               </div>
 
               <div className="results-actions">
@@ -1631,6 +1659,15 @@ export default function BuddyMatcherTool({
                   onClick={handleDownload}
                 >
                   Download
+                </button>
+
+                <button
+                  id="mark-used"
+                  className="btn btn-outline-success btn-sm"
+                  type="button"
+                  onClick={handleMarkAsUsed}
+                >
+                  Mark as used
                 </button>
 
                 <button
@@ -1698,6 +1735,31 @@ export default function BuddyMatcherTool({
                 ))}
               </div>
             )}
+
+            {results.length > 0 && (
+              <div className="buddy-print-results" aria-hidden="true">
+                <h1>Buddy Matcher groups</h1>
+
+                <div className="buddy-print-groups">
+                  {results.map((group, groupIndex) => (
+                    <section
+                      key={`print-group-${groupIndex}`}
+                      className="buddy-print-group"
+                    >
+                      <h2>Group {groupIndex + 1}</h2>
+
+                      <ul>
+                        {group.map((name, nameIndex) => (
+                          <li key={`print-${groupIndex}-${nameIndex}`}>
+                            {name}
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1705,6 +1767,7 @@ export default function BuddyMatcherTool({
       {projectorModeOpen && (
         <div
           ref={projectorViewRef}
+          className="student-view-dialog"
           role="dialog"
           aria-modal="true"
           aria-label="Student View"
