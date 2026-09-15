@@ -1,22 +1,10 @@
 import { teacherResourceLinks } from "@/lib/teacherResourceLinks";
-
-const siteUrl = "https://www.buddymatcher.co.uk";
+import { siteUrl } from "@/lib/seo";
 
 export default function sitemap() {
-  const lastModified = new Date();
-
   return [
-    {
-      url: siteUrl,
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    ...teacherResourceLinks.map((resource) => ({
-      url: `${siteUrl}${resource.href}`,
-      lastModified,
-      changeFrequency: "monthly",
-      priority: resource.slug === "teachers" ? 0.9 : 0.8,
-    })),
+    { url: siteUrl, lastModified: "2026-09-15" },
+    ...teacherResourceLinks.map((resource) => ({ url: `${siteUrl}${resource.href}` })),
+    ...["/upgrade", "/contact", "/privacy", "/terms"].map((path) => ({ url: `${siteUrl}${path}` })),
   ];
 }

@@ -1,11 +1,12 @@
 import { getTeacherResourceLink } from "@/lib/teacherResourceLinks";
+import { pageMetadata } from "@/lib/seo";
 
 const siteUrl = "https://www.buddymatcher.co.uk";
 
 const teacherPages = {
   teachers: {
     slug: "teachers",
-    metadataTitle: "Buddy Matcher for Teachers",
+    metadataTitle: "Classroom Group Generator for Teachers",
     description:
       "Buddy Matcher helps teachers create random student pairs and groups, avoid awkward pairings, reduce repeats and save class lists.",
     eyebrow: "Teacher resources",
@@ -32,17 +33,17 @@ const teacherPages = {
         heading: "Useful for everyday lesson moments",
         body: [
           "Use it for talk partners, practical tasks, reading groups, revision activities, project groups, seating changes, clubs and short collaborative tasks. It also works outside school for workshops, training sessions and community groups.",
-          "The free tool is enough for quick random pairs and trios. Pro is aimed at repeated classroom use, where saved lists, no-repeat pairing history and specific pairing rules save time over a week or term.",
+          "The free tool is enough for occasional random pairs and trios. Pro adds saved lists, specific pairing rules and an Avoid repeats option for regular classroom use.",
         ],
       },
       {
         heading: "Controls that match real classroom decisions",
         body: [
-          "The most useful controls are the ones that reflect decisions teachers already make. The Don't group these two option helps with behaviour, focus or awkward dynamics. No-repeat pairing history helps stop the same students always working together. Group leaders help spread responsibility across groups.",
+          "The most useful controls are the ones that reflect decisions teachers already make. The Don't group these two option helps with behaviour, focus or awkward dynamics. Click Mark as used after choosing your final groups: Avoid repeats can then try to avoid those pairings the next time you use the same names in that browser. Group leaders help spread responsibility across groups.",
         ],
         bullets: [
           "Keep two named students apart for a particular activity.",
-          "Try to avoid pairings from the previous round.",
+          "Try to avoid pairings from the last grouping you marked as used.",
           "Reuse saved class lists instead of pasting names every time.",
           "Create bigger groups for practical work or projects.",
         ],
@@ -144,7 +145,7 @@ const teacherPages = {
     highlights: [
       "Use randomness to reduce arguments about who works with whom.",
       "Add light constraints for behaviour, confidence and classroom dynamics.",
-      "Track repeat pairings where possible so groups rotate over time.",
+      "Mark your final groups as used to help reduce repeats next time.",
       "Keep the process simple enough to repeat across lessons.",
     ],
     sections: [
@@ -166,7 +167,7 @@ const teacherPages = {
         heading: "Avoid the same pairings every time",
         body: [
           "One hidden unfairness is repetition. If the same two students always end up together, they may miss chances to practise with other classmates. Some students become dependent on one partner, while others rarely get to work with different peers.",
-          "Buddy Matcher Pro can reduce repeat pairings where possible, which helps make repeated activities feel more varied over time.",
+          "With Buddy Matcher Pro, click Mark as used on the final groups. When Avoid repeats is on, the next generation with the same names can try to avoid pairings from that last marked grouping. The record stays in that browser and is replaced when you mark another grouping as used.",
         ],
       },
       {
@@ -204,13 +205,13 @@ const teacherPages = {
     title: "How to Avoid Repeat Student Pairings",
     intro: [
       "Repeat pairings are easy to miss. A class can look randomly grouped, but the same students may still keep ending up together over several activities, especially in smaller classes or repeated pair work.",
-      "Buddy Matcher Pro includes no-repeat pairing history to reduce repeated pairings where possible. It is designed for teachers who want students to work with a wider range of classmates without tracking every past pair by hand.",
+      "Buddy Matcher Pro helps reduce repeats from the last grouping you marked as used. It is designed for teachers who want to vary classroom partners without making manual notes about the previous groups.",
     ],
     highlights: [
       "Reduce the same students repeatedly working together.",
       "Encourage wider participation across the class.",
       "Avoid manual notes about who worked with whom last time.",
-      "Combine no-repeat history with blocked pairs and group leaders.",
+      "Combine Avoid repeats with blocked pairs and group leaders.",
     ],
     sections: [
       {
@@ -224,26 +225,27 @@ const teacherPages = {
         heading: "The manual way is hard to maintain",
         body: [
           "You can track pairings on paper or in a spreadsheet, but that quickly becomes another admin job. It is especially awkward when students are absent, when you switch from pairs to groups, or when you need groups in the middle of a lesson.",
-          "A no-repeat pairing feature does that checking in the background so you can focus on whether the final groups make sense.",
+          "Buddy Matcher offers a simpler way to check against your last chosen grouping: click Mark as used, then turn on Avoid repeats when you next generate groups with the same names in that browser.",
         ],
       },
       {
         heading: "How Buddy Matcher helps",
         body: [
-          "When no-repeat pairing history is active, Buddy Matcher checks previous pairings for that list and tries to reduce repeats in the next generated result. It cannot make an impossible class arrangement possible, but it can help avoid obvious repeats where the numbers allow.",
+          "When Avoid repeats is on, Buddy Matcher checks the last grouping you marked as used for the same set of names and tries to reduce repeated pairings. It cannot make an impossible arrangement possible, but it can help where the numbers allow.",
+          "The record is kept in your current browser. Each time you click Mark as used, it replaces the previous record for those names. It does not build a history of every past grouping or carry that record to another browser. If the names change, for example because a student is absent, that is a different list for repeat checking.",
           "This is most useful for regular routines: weekly discussion partners, repeated revision tasks, reading pairs, project groups or practical activities across a unit.",
         ],
       },
       {
         heading: "Make it part of a simple routine",
         body: [
-          "Use the same saved list for the class, generate groups, and keep no-repeat history on for repeated tasks. If there is a classroom reason to keep two students apart, add that as a separate rule rather than trying to remember it manually.",
+          "Use the same class list and browser, generate groups, and review the result. Click Mark as used only on the grouping you choose for the activity. If there is a classroom reason to keep two students apart, add that as a separate rule.",
         ],
         bullets: [
           "Use saved named lists for each class.",
           "Generate pairs or groups from the same list over time.",
-          "Use no-repeat history to vary partnerships.",
-          "Reset or ignore history when a task needs a fresh start.",
+          "Click Mark as used to remember the final grouping for next time.",
+          "Turn Avoid repeats off when you want to generate without that check.",
         ],
       },
     ],
@@ -308,7 +310,7 @@ const teacherPages = {
       {
         heading: "Choosing a strategy quickly",
         body: [
-          "Use random pairs when the task is short. Use controlled random groups when the activity is longer or behaviour matters. Use no-repeat history when you repeat grouping often. Use leaders when groups need structure from the start.",
+          "Use random pairs when the task is short. Use controlled random groups when the activity is longer or behaviour matters. Mark your final groups as used, then turn on Avoid repeats to help vary partners next time you use the same names in that browser. Use leaders when groups need structure from the start.",
         ],
       },
     ],
@@ -359,7 +361,7 @@ const teacherPages = {
       {
         heading: "Useful for repeated weekly routines",
         body: [
-          "Saved lists are helpful when you use the same class list again and again. No-repeat pairing history can also help when you want children to work with different classmates across a week or half term.",
+          "Saved lists are helpful when you use the same class list again and again. After choosing your final groups, click Mark as used. Avoid repeats can then help vary partners the next time you generate groups with the same names in that browser, using only the last marked grouping.",
           "This is useful for talk partners, reading rotations, topic work, maths investigations and group challenges.",
         ],
       },
@@ -403,26 +405,12 @@ export function getTeacherPage(slug) {
 
 export function getTeacherPageMetadata(slug) {
   const page = getTeacherPage(slug);
-
-  return {
+  return pageMetadata({
     title: page.metadataTitle,
     description: page.description,
-    alternates: {
-      canonical: page.href,
-    },
-    openGraph: {
-      title: page.metadataTitle,
-      description: page.description,
-      url: `${siteUrl}${page.href}`,
-      siteName: "Buddy Matcher",
-      type: "article",
-    },
-    twitter: {
-      card: "summary",
-      title: page.metadataTitle,
-      description: page.description,
-    },
-  };
+    path: page.href,
+    type: "article",
+  });
 }
 
 export function getTeacherPageJsonLd(page) {

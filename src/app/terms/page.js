@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Terms | Buddy Matcher",
-  description: "Buddy Matcher terms.",
-};
+export const metadata = pageMetadata({
+  title: "Terms of Use",
+  description: "Terms for using Buddy Matcher, including free group generation, Pro features and one-off payments.",
+  path: "/terms",
+});
 
 export default function TermsPage() {
   return (

@@ -1,5 +1,12 @@
 export const teacherResourceLinks = [
   {
+    slug: "projector-mode",
+    href: "/projector-mode",
+    title: "Classroom Projector Mode & Student View",
+    summary:
+      "Show final groups on your classroom screen, with your setup controls tucked away. See how Student View works.",
+  },
+  {
     slug: "teachers",
     href: "/teachers",
     title: "Buddy Matcher for Teachers",

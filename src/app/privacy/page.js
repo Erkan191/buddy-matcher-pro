@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Privacy | Buddy Matcher",
-  description: "Buddy Matcher privacy information.",
-};
+export const metadata = pageMetadata({
+  title: "Privacy Policy",
+  description: "How Buddy Matcher handles your account details, locally stored names, saved Pro lists and payment information.",
+  path: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (
@@ -40,7 +42,7 @@ export default function PrivacyPage() {
             <h2>Contact</h2>
             <p>
               For privacy questions, email{" "}
-              <a href="mailto:erkan.said22@gmail.com">hello@buddymatcher.co.uk</a>.
+              <a href="mailto:erkan.said22@gmail.com">erkan.said22@gmail.com</a>.
             </p>
           </div>
 

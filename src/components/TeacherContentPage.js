@@ -8,9 +8,10 @@ function ToolCta({ title, text }) {
       <h2>{title}</h2>
       <p>{text}</p>
       <div className="teacher-cta-actions">
-        <Link href="/#tool" className="btn btn-success">
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Document navigation avoids stale hash fragments when returning to the tool. */}
+        <a href="/#tool" className="btn btn-success">
           Open Buddy Matcher
-        </Link>
+        </a>
         <Link href="/" className="btn btn-outline-success">
           Back to homepage
         </Link>
@@ -43,9 +44,10 @@ export default function TeacherContentPage({ page }) {
             <Link href="/teachers" className="site-nav-link">
               Teacher resources
             </Link>
-            <Link href="/#tool" className="btn btn-light btn-sm nav-cta">
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Document navigation avoids stale hash fragments when returning to the tool. */}
+            <a href="/#tool" className="btn btn-light btn-sm nav-cta">
               Open tool
-            </Link>
+            </a>
           </div>
         </div>
       </nav>
@@ -61,9 +63,10 @@ export default function TeacherContentPage({ page }) {
               </p>
             ))}
             <div className="teacher-hero-actions">
-              <Link href="/#tool" className="btn btn-success btn-lg">
+              {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Document navigation avoids stale hash fragments when returning to the tool. */}
+              <a href="/#tool" className="btn btn-success btn-lg">
                 Use the tool
-              </Link>
+              </a>
               <Link href="/teachers" className="btn btn-outline-success btn-lg">
                 Browse teacher resources
               </Link>

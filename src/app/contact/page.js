@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Contact | Buddy Matcher",
-  description: "Contact Buddy Matcher.",
-};
+export const metadata = pageMetadata({
+  title: "Contact & Support",
+  description: "Get help with Buddy Matcher, report a problem or share feedback about the random group generator.",
+  path: "/contact",
+});
 
 export default function ContactPage() {
   return (
