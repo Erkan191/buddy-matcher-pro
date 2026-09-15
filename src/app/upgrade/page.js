@@ -26,10 +26,10 @@ async function trackUsageEvent(eventType, metadata = {}, userId) {
 
     if (resolvedUserId === undefined) {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      resolvedUserId = user?.id ?? null;
+      resolvedUserId = session?.user?.id ?? null;
     }
 
     await supabase.from("usage_events").insert({
@@ -62,10 +62,10 @@ export default function UpgradePage() {
       });
 
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (!user) {
+      if (!session?.access_token) {
         window.location.href = "/login?next=/upgrade&source=upgrade_page";
         return;
       }
@@ -74,14 +74,23 @@ export default function UpgradePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          userId: user.id,
           sessionId,
         }),
       });
 
       const data = await response.json();
+
+      if (response.status === 401) {
+        window.location.href = "/login?next=/upgrade&source=upgrade_page";
+        return;
+      }
+      if (response.status === 409 && data.status === "active") {
+        window.location.href = "/";
+        return;
+      }
 
       if (!response.ok || !data?.url) {
         throw new Error(data?.error || "Could not start checkout.");
@@ -92,7 +101,7 @@ export default function UpgradePage() {
         {
           source: "upgrade_page",
         },
-        user.id
+        session.user.id
       );
 
       window.location.href = data.url;
