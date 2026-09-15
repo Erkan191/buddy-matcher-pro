@@ -156,6 +156,16 @@ export default function UpgradePage() {
             >
               {isLoading ? "Loading checkout..." : "Upgrade to Pro"}
             </button>
+
+            <p
+              className="price-sub"
+              style={{ margin: "1rem 0 0", fontSize: "0.875rem", lineHeight: 1.5 }}
+            >
+              <strong>Having trouble paying?</strong>
+              <br />
+              If checkout fails, you can try another card, try again later, or{" "}
+              <a href="mailto:erkan.said22@gmail.com">email me</a> and I’ll help.
+            </p>
           </div>
         </section>
 
