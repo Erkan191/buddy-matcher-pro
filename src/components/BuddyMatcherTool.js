@@ -530,6 +530,11 @@ export default function BuddyMatcherTool({
 
     const data = await response.json().catch(() => ({}));
 
+    // A different tab may consume the last use after our initial check.
+    if (action === "record" && response.status === 429 && data.canGenerate === false) {
+      return data;
+    }
+
     if (!response.ok) {
       throw new Error(data.error || "Free generate usage request failed");
     }
@@ -949,6 +954,11 @@ export default function BuddyMatcherTool({
           ...generateMetadata,
           checked_free_usage_mode: freeUsageStatus.freeUsageMode,
         });
+
+        if (!recordedUsageStatus.canGenerate) {
+          openFreeLimitModal(recordedUsageStatus, allowanceMetadata);
+          return;
+        }
 
         generateMetadata.free_usage_mode =
           recordedUsageStatus.freeUsageMode || generateMetadata.free_usage_mode;
@@ -2013,26 +2023,26 @@ Avoid repeat pairings from the grouping marked as used              </label>
 
             <div className="pro-modal-price-pill">£3.99 one-off</div>
 
-            <h3>You&apos;ve used your 30 free group generations this week.</h3>
+            <h3>You&apos;ve reached your free generation limit.</h3>
 
             <p className="pro-modal-lead">
-              Buddy Matcher is free for occasional use. Regular users can
-              upgrade to Pro for unlimited generating, saved lists, avoid repeat
-              pairings, blocked pairs and group leaders.
+              Free includes 5 normal generations plus 1 emergency generation in
+              any rolling 7 days. Pro gives you unlimited generating, saved
+              lists, avoid repeat pairings, blocked pairs and group leaders.
             </p>
 
             <p className="pro-modal-small">Pro is £3.99 one-off.</p>
 
             {freeLimitModal.emergencyRemaining > 0 ? (
               <p className="pro-modal-small">
-                You have {freeLimitModal.emergencyRemaining} emergency generate
-                {freeLimitModal.emergencyRemaining === 1 ? "" : "s"} left today.
+                You have 1 emergency generation available. Once it is used,
+                you will need to wait for your allowance to reset or upgrade to Pro.
               </p>
             ) : (
               <p className="pro-modal-small">
-                You&apos;ve used today&apos;s emergency generations. You can
-                generate again when your rolling 7-day allowance frees up, or
-                upgrade to Pro.
+                Your emergency generation has also been used. Free uses become
+                available again as earlier generations pass seven days old.
+                You can upgrade to Pro for unlimited generating.
               </p>
             )}
 
@@ -2056,7 +2066,7 @@ Avoid repeat pairings from the grouping marked as used              </label>
                   onClick={handleEmergencyGenerate}
                   disabled={generateInFlight}
                 >
-                  Use emergency generate
+                  Use my emergency generation
                 </button>
               )}
 

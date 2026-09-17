@@ -21,7 +21,7 @@ const structuredData = {
       operatingSystem: "Any operating system with a modern web browser",
       browserRequirements: "Requires JavaScript",
       offers: [
-        { "@type": "Offer", name: "Free", price: "0", priceCurrency: "GBP", description: "Pairs and trios, with 30 free group generations each week." },
+        { "@type": "Offer", name: "Free", price: "0", priceCurrency: "GBP", description: "Pairs and trios, with 5 normal generations plus 1 emergency generation per rolling 7 days." },
         { "@type": "Offer", name: "Buddy Matcher Pro", price: "3.99", priceCurrency: "GBP", url: `${siteUrl}/upgrade`, description: "One-off payment. No subscription." },
       ],
     },

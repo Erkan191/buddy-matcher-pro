@@ -197,7 +197,7 @@ export default function HomePage() {
             </div>
 
             <ul className="hero-points">
-              <li>30 free group generations each week</li>
+              <li>5 free group generations per rolling 7 days, plus 1 emergency use</li>
               <li>Paste names from Excel or Google Sheets</li>
               <li>Pro helps keep people apart and reduce repeat pairings</li>
               <li>Pro is £3.99 once, with no subscription</li>

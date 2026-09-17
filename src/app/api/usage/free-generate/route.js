@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createHmac, randomUUID, timingSafeEqual } from "crypto";
 
-const FREE_GENERATE_WEEKLY_LIMIT = 30;
+const FREE_GENERATE_WEEKLY_LIMIT = 5;
 const FREE_GENERATE_WINDOW_DAYS = 7;
 const FREE_GENERATE_WINDOW_MS =
   FREE_GENERATE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
-const FREE_GENERATE_EMERGENCY_DAILY_LIMIT = 3;
+const FREE_GENERATE_EMERGENCY_WINDOW_LIMIT = 1;
 const FREE_GENERATE_SUCCESS_EVENT = "free_generate_success";
 const FREE_GENERATE_QUOTA_COOKIE_NAME = "bm_free_generate_quota";
 const FREE_GENERATE_QUOTA_COOKIE_MAX_AGE = 60 * 24 * 60 * 60;
@@ -154,7 +154,11 @@ function buildUsageMetadata({ identity, quotaDate, status, metadata = {} }) {
     weekly_limit: FREE_GENERATE_WEEKLY_LIMIT,
     window_days: FREE_GENERATE_WINDOW_DAYS,
     emergency_count_today: status.emergencyCountToday,
-    emergency_limit: FREE_GENERATE_EMERGENCY_DAILY_LIMIT,
+    ...(Number.isFinite(status.emergencyCountWindow)
+      ? { emergency_count_window: status.emergencyCountWindow }
+      : {}),
+    emergency_limit: FREE_GENERATE_EMERGENCY_WINDOW_LIMIT,
+    emergency_window_days: FREE_GENERATE_WINDOW_DAYS,
     emergency_remaining: status.emergencyRemaining,
   };
 }
@@ -242,7 +246,7 @@ async function getFreeGenerateStatus(identity, quotaDate) {
     .from("usage_events")
     .select("metadata")
     .eq("event_type", FREE_GENERATE_SUCCESS_EVENT)
-    .gte("created_at", windowStart);
+    .gt("created_at", windowStart);
 
   query = filterIdentity(query, identity);
 
@@ -256,19 +260,23 @@ async function getFreeGenerateStatus(identity, quotaDate) {
   const weeklyCount = events.filter(
     (event) => event.metadata?.free_usage_mode === "weekly"
   ).length;
-  const emergencyCountToday = events.filter(
-    (event) =>
-      event.metadata?.free_usage_mode === "emergency" &&
-      event.metadata?.local_date === quotaDate
+  const emergencyEvents = events.filter(
+    (event) => event.metadata?.free_usage_mode === "emergency"
+  );
+  const emergencyCountWindow = emergencyEvents.length;
+  // Keep the daily analytics field; only the rolling count controls allowance.
+  const emergencyCountToday = emergencyEvents.filter(
+    (event) => event.metadata?.local_date === quotaDate
   ).length;
   const emergencyRemaining = Math.max(
     0,
-    FREE_GENERATE_EMERGENCY_DAILY_LIMIT - emergencyCountToday
+    FREE_GENERATE_EMERGENCY_WINDOW_LIMIT - emergencyCountWindow
   );
 
   return {
     weeklyCount,
     emergencyCountToday,
+    emergencyCountWindow,
     emergencyRemaining,
   };
 }
@@ -311,7 +319,7 @@ function proResponse() {
     freeUsageMode: "pro",
     weeklyCount: 0,
     emergencyCountToday: 0,
-    emergencyRemaining: FREE_GENERATE_EMERGENCY_DAILY_LIMIT,
+    emergencyRemaining: FREE_GENERATE_EMERGENCY_WINDOW_LIMIT,
   };
 }
 
