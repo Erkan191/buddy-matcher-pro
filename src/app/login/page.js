@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/supabaseClient";
+import Link from "next/link";
 
 function getSessionId() {
   if (typeof window === "undefined") return "";
@@ -83,14 +84,16 @@ function LoginPageContent() {
     setMessage("");
 
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim(),
       password,
     });
 
     setLoading(false);
 
     if (error) {
-      setMessage(error.message);
+      setMessage(error.code === "invalid_credentials"
+        ? "Email or password not recognised. Use the email you signed up with, or choose Forgot password below."
+        : error.message);
       return;
     }
 
@@ -161,13 +164,14 @@ function LoginPageContent() {
         <p className="text-sm text-zinc-600 mb-6">
           {isUpgradeFlow
             ? "Create a free account or log in first. Pro still costs £3.99 one-off, and you will continue to the upgrade page next."
-            : "Use email and password. No magic link needed every time."}
+            : "Use the email you created your account with. This may be different from your payment email."}
         </p>
 
         <form onSubmit={handleLogin}>
           <input
             type="email"
             placeholder="Email"
+            aria-label="Account email"
             className="w-full border p-3 rounded mb-4"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -178,6 +182,7 @@ function LoginPageContent() {
           <input
             type="password"
             placeholder="Password"
+            aria-label="Password"
             className="w-full border p-3 rounded mb-4"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -194,6 +199,10 @@ function LoginPageContent() {
           </button>
         </form>
 
+        <Link href="/forgot-password" className="block text-sm text-green-800 underline mb-5">
+          Forgot password?
+        </Link>
+
         <button
           type="button"
           disabled={loading}
@@ -203,7 +212,7 @@ function LoginPageContent() {
           {loading ? "Working..." : "Create free account"}
         </button>
 
-        {message && <p className="mt-4 text-sm">{message}</p>}
+        {message && <p role="status" className="mt-4 text-sm">{message}</p>}
       </div>
     </main>
   );

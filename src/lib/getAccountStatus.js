@@ -55,21 +55,21 @@ export async function getAccountStatus() {
 
       return {
         user,
-        email: resolvedUser.email || user.email || "",
+        email: user.email || resolvedUser.email || "",
         isPro: !!resolvedUser.is_pro,
       };
     }
 
     return {
       user,
-      email: insertedUser.email || user.email || "",
+      email: user.email || insertedUser.email || "",
       isPro: !!insertedUser.is_pro,
     };
   }
 
   return {
     user,
-    email: existingUser.email || user.email || "",
+    email: user.email || existingUser.email || "",
     isPro: !!existingUser.is_pro,
   };
 }
