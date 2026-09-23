@@ -401,6 +401,16 @@ export default function HomePage() {
               Buy me a coffee
             </a>
           </div>
+
+          <div>
+            <a
+            href="https://watchmyplot.com"
+            target="blank"
+            rel="noopener noreferrer"
+            >
+              Love growing vegatables? Check out Watch My Plot!
+            </a>
+          </div>
         </div>
       </footer>
     </main>
