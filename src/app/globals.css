@@ -71,9 +71,26 @@ img {
 
 .navbar-brand {
   color: #fff;
+  display: inline-flex;
+  align-items: center;
+  flex: none;
   font-weight: 700;
   letter-spacing: 0.2px;
+  line-height: 0;
   font-size: 1.1rem;
+}
+
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  width: clamp(145px, 15vw, 175px);
+  max-width: 42vw;
+}
+
+.brand-logo-image {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .site-nav-links {

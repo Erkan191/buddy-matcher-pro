@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import BrandLogo from "@/components/BrandLogo";
 import { useEffect, useState } from "react";
 import { supabase } from "@/supabaseClient";
 
@@ -121,7 +122,7 @@ export default function UpgradePage() {
       <nav className="site-navbar">
         <div className="section-wrap site-nav-wrap">
           <Link href="/" className="navbar-brand">
-            Buddy Matcher
+            <BrandLogo />
           </Link>
 
           <Link href="/" className="btn btn-outline-light btn-sm nav-cta">

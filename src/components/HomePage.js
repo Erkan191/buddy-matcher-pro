@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import BrandLogo from "@/components/BrandLogo";
 import BuddyMatcherTool from "@/components/BuddyMatcherTool";
 import HomeProSection, { HomeTipSection } from "@/components/HomeProSection";
 import { supabase } from "@/supabaseClient";
@@ -70,7 +71,7 @@ export default function HomePage() {
             className="navbar-brand"
             onClick={() => setNavOpen(false)}
           >
-            Buddy Matcher
+            <BrandLogo />
           </Link>
 
           <button

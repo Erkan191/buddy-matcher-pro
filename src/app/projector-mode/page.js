@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BrandLogo from "@/components/BrandLogo";
 import { pageMetadata } from "@/lib/seo";
 import styles from "./page.module.css";
 
@@ -64,7 +65,7 @@ export default function ProjectorModePage() {
       <nav className={styles.nav} aria-label="Main navigation">
         <div className={styles.navInner}>
           <Link href="/" className={styles.brand}>
-            Buddy Matcher
+            <BrandLogo />
           </Link>
           <div className={styles.navLinks}>
             <Link href="/teachers" className={styles.resourceLink}>

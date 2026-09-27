@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BrandLogo from "@/components/BrandLogo";
 import { getTeacherPageJsonLd } from "@/lib/teacherPageContent";
 import { teacherResourceLinks } from "@/lib/teacherResourceLinks";
 
@@ -37,7 +38,7 @@ export default function TeacherContentPage({ page }) {
       <nav className="site-navbar teacher-navbar">
         <div className="section-wrap site-nav-wrap">
           <Link href="/" className="navbar-brand">
-            Buddy Matcher
+            <BrandLogo />
           </Link>
 
           <div className="teacher-nav-links">
