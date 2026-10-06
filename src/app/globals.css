@@ -936,6 +936,28 @@ img {
   padding-bottom: 3rem;
 }
 
+.upgrade-hero.conversion-hero { grid-template-columns: 1fr; max-width: 850px; margin-inline: auto; }
+.conversion-price { color: #17673e; font-size: clamp(1.2rem, 3vw, 1.65rem); font-weight: 750; margin: 1rem 0; }
+.conversion-benefits { display: grid; gap: 0.8rem; padding: 0; margin: 1.25rem 0; list-style: none; }
+.conversion-benefits li { display: grid; gap: 0.15rem; padding-left: 1rem; border-left: 3px solid #45a86c; }
+.conversion-benefits strong { color: #1f3b2d; font-size: 1.1rem; }
+.conversion-benefits span, .conversion-note { color: var(--text-2); font-size: 0.95rem; }
+.conversion-note { margin: 0.65rem 0 0; }
+.pro-secondary-features, .optional-group-tools { margin: 1rem 0; font-size: 0.95rem; }
+.pro-secondary-features summary, .optional-group-tools summary { cursor: pointer; font-weight: 600; }
+.pro-secondary-features p { margin: 0.65rem 0; }
+.optional-group-tools button { margin-top: 0.75rem; }
+.pairing-control { margin: 1rem 0 0.75rem; }
+dialog.pro-feedback { margin: auto; border: 0; max-height: calc(100dvh - 2rem); width: min(520px, calc(100% - 2rem)); overflow-y: auto; }
+.pro-feedback::backdrop { background: rgba(15, 23, 42, 0.55); }
+.feedback-options { display: grid; gap: 0.5rem; margin: 1rem 0; }
+.feedback-options .btn { text-align: left; white-space: normal; }
+@media (max-width: 480px) {
+  .conversion-hero .upgrade-copy { padding: 1.15rem; }
+  .conversion-hero .upgrade-copy h1 { font-size: 2rem; }
+  .conversion-hero .btn { width: 100%; }
+}
+
 .upgrade-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;

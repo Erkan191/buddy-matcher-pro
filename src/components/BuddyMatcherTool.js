@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import ProFeedback from "@/components/ProFeedback";
+import { proFeatures } from "@/lib/proFeatures";
+import { usageMetadata } from "@/lib/attribution.mjs";
+import { trackUsageEvent } from "@/lib/usageAnalytics";
 import Link from "next/link";
 import { supabase } from "@/supabaseClient";
 
@@ -314,6 +318,7 @@ export default function BuddyMatcherTool({
   const [projectorFullscreenEnabled, setProjectorFullscreenEnabled] =
     useState(false);
   const [showProModal, setShowProModal] = useState(false);
+  const [showProFeedback, setShowProFeedback] = useState(false);
   const [lockedReason, setLockedReason] = useState("");
   const [avoidRepeats, setAvoidRepeats] = useState(false);
   const [showPowerUserNudge, setShowPowerUserNudge] = useState(false);
@@ -373,28 +378,6 @@ export default function BuddyMatcherTool({
     setProjectorFullscreenEnabled(Boolean(document.fullscreenEnabled));
   }, []);
 
-    useEffect(() => {
-    async function trackPageView() {
-      const sessionId = getSessionId();
-      if (!sessionId) return;
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      await supabase.from("usage_events").insert({
-        event_type: "page_view",
-        session_id: sessionId,
-        user_id: user?.id ?? null,
-        metadata: {
-          path: window.location.pathname,
-        },
-      });
-    }
-
-    void trackPageView();
-  }, []);
-
   const currentNames = useMemo(() => {
     return dedupeNames(parseNames(rawInput));
   }, [rawInput]);
@@ -403,23 +386,7 @@ export default function BuddyMatcherTool({
     setLockedReason(reason);
     setShowProModal(true);
 
-    void (async () => {
-      const sessionId = getSessionId();
-      if (!sessionId) return;
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      await supabase.from("usage_events").insert({
-        event_type: "pro_modal_opened",
-        session_id: sessionId,
-        user_id: user?.id ?? null,
-        metadata: {
-          reason,
-        },
-      });
-    })();
+    void trackUsageEvent("pro_modal_opened", { reason });
   }
 
   function openNotice(title, message) {
@@ -471,26 +438,6 @@ export default function BuddyMatcherTool({
     return false;
   }
 
-  async function trackUsageEvent(eventType, metadata = {}) {
-    try {
-      const sessionId = getSessionId();
-      if (!sessionId) return;
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      await supabase.from("usage_events").insert({
-        event_type: eventType,
-        session_id: sessionId,
-        user_id: user?.id ?? null,
-        metadata,
-      });
-    } catch (error) {
-      console.error("Could not track usage event:", error);
-    }
-  }
-
   async function postFreeGenerateUsage({
     action,
     eventType = "",
@@ -523,7 +470,7 @@ export default function BuddyMatcherTool({
         eventType,
         sessionId,
         localDate: getLocalDateKey(Date.now()),
-        metadata,
+        metadata: usageMetadata(metadata),
         useEmergencyOverride,
       }),
     });
@@ -1086,9 +1033,9 @@ export default function BuddyMatcherTool({
         event_type: "save_list_clicked",
         session_id: sessionId,
         user_id: user?.id ?? null,
-        metadata: {
+        metadata: usageMetadata({
           total_names: cleanedNames.length,
-        },
+        }),
       });
     })();
 
@@ -1253,6 +1200,7 @@ export default function BuddyMatcherTool({
     }
 
     setProjectorModeOpen(true);
+    void trackUsageEvent("projector_mode_opened", { source: "tool", group_count: results.length, total_names: results.flat().length });
   }
 
   async function handleCloseProjectorMode() {
@@ -1402,29 +1350,30 @@ export default function BuddyMatcherTool({
               Tip: you can paste a whole column straight from Excel or Google Sheets.
             </div>
 
+            <div className="pairing-control">
+              <button
+                type="button"
+                className="btn btn-outline-dark"
+                onClick={handleOpenBlockedPairsModal}
+              >
+                Don’t group these two
+              </button>
+            </div>
+
+            <div className="form-check">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="avoid-repeats"
+                checked={avoidRepeats}
+                onChange={handleAvoidRepeatsChange}
+              />
+              <label className="form-check-label" htmlFor="avoid-repeats">
+                Avoid repeat pairings from the grouping marked as used
+              </label>
+            </div>
+
             <div className="form-row-two">
-              <div>
-                <label htmlFor="group-size" className="form-label">
-                  Group size
-                </label>
-
-                <select
-                  id="group-size"
-                  className="form-select"
-                  value={selectedGroupValue}
-                  onChange={handleGroupSizeChange}
-                >
-                  <option value="2">2 - Pairs</option>
-                  <option value="3">3 - Trios</option>
-                  <option value="4">{isPro ? "4" : "4 - Pro"}</option>
-                  <option value="5">{isPro ? "5" : "5 - Pro"}</option>
-                  <option value="6">{isPro ? "6" : "6 - Pro"}</option>
-                  <option value="custom">
-                    {isPro ? "Custom" : "Custom - Pro"}
-                  </option>
-                </select>
-              </div>
-
               <div>
                 <label htmlFor="saved-lists" className="form-label">
                   Saved lists
@@ -1448,6 +1397,28 @@ export default function BuddyMatcherTool({
                   ))}
                 </select>
               </div>
+
+              <div>
+                <label htmlFor="group-size" className="form-label">
+                  Group size
+                </label>
+
+                <select
+                  id="group-size"
+                  className="form-select"
+                  value={selectedGroupValue}
+                  onChange={handleGroupSizeChange}
+                >
+                  <option value="2">2 - Pairs</option>
+                  <option value="3">3 - Trios</option>
+                  <option value="4">{isPro ? "4" : "4 - Pro"}</option>
+                  <option value="5">{isPro ? "5" : "5 - Pro"}</option>
+                  <option value="6">{isPro ? "6" : "6 - Pro"}</option>
+                  <option value="custom">
+                    {isPro ? "Custom" : "Custom - Pro"}
+                  </option>
+                </select>
+              </div>
             </div>
 
             {useCustom && (
@@ -1468,25 +1439,13 @@ export default function BuddyMatcherTool({
               </div>
             )}
 
-            <div className="form-check">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="avoid-repeats"
-                checked={avoidRepeats}
-                onChange={handleAvoidRepeatsChange}
-              />
-              <label className="form-check-label" htmlFor="avoid-repeats">
-Avoid repeat pairings from the grouping marked as used              </label>
-            </div>
-
-                        <div className="preview-box">{previewText}</div>
+            <div className="preview-box">{previewText}</div>
 
             {showPowerUserNudge && !isPro && (
               <div className="preview-box">
                 <p className="small-note">
                   <strong>Looks like you use Buddy Matcher regularly.</strong>{" "}
-                  Pro helps you avoid repeat pairings, keep people apart and save lists.
+                  Pro helps you keep people apart, avoid repeat pairings and save lists.
                 </p>
 
                 <div className="pro-modal-actions">
@@ -1526,21 +1485,6 @@ Avoid repeat pairings from the grouping marked as used              </label>
                 Pick one randomly
               </button>
 
-              <button
-                type="button"
-                className="btn btn-outline-dark"
-                onClick={handleOpenBlockedPairsModal}
-              >
-                Don’t group these two
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-outline-dark"
-                onClick={handleOpenLeadersModal}
-              >
-                Group leaders
-              </button>
             </div>
 
             {(blockedPairs.length > 0 || leaderNames.length > 0) && (
@@ -1654,6 +1598,13 @@ Avoid repeat pairings from the grouping marked as used              </label>
 
               <div className="results-actions">
                 <button
+                  className="btn btn-outline-success btn-sm"
+                  type="button"
+                  onClick={handleOpenProjectorMode}
+                >
+                  Student View
+                </button>
+                <button
                   id="copy-results"
                   className="btn btn-outline-success btn-sm"
                   type="button"
@@ -1692,14 +1643,6 @@ Avoid repeat pairings from the grouping marked as used              </label>
                 <button
                   className="btn btn-outline-success btn-sm"
                   type="button"
-                  onClick={handleOpenProjectorMode}
-                >
-                  Student View
-                </button>
-
-                <button
-                  className="btn btn-outline-success btn-sm"
-                  type="button"
                   onClick={handlePrint}
                 >
                   Print
@@ -1716,6 +1659,16 @@ Avoid repeat pairings from the grouping marked as used              </label>
                 ))}
               </div>
             )}
+
+            <details className="optional-group-tools"><summary>Optional: group leaders</summary>
+              <button
+                type="button"
+                className="btn btn-outline-dark"
+                onClick={handleOpenLeadersModal}
+              >
+                Group leaders
+              </button>
+            </details>
 
             {results.length === 0 ? (
               <div id="empty-state" className="empty-state">
@@ -2021,14 +1974,15 @@ Avoid repeat pairings from the grouping marked as used              </label>
           <div className="pro-modal">
             <div className="pro-modal-badge">Buddy Matcher</div>
 
-            <div className="pro-modal-price-pill">£3.99 one-off</div>
+            <div className="pro-modal-price-pill">£3.99 once · no subscription</div>
 
-            <h3>You&apos;ve reached your free generation limit.</h3>
+            <h3>Looks like you’re using Buddy Matcher regularly</h3>
 
             <p className="pro-modal-lead">
-              Free includes 5 normal generations plus 1 emergency generation in
-              any rolling 7 days. Pro gives you unlimited generating, saved
-              lists, avoid repeat pairings, blocked pairs and group leaders.
+              Save time each lesson with Pro: keep certain students apart, avoid
+              repeat pairings and save class lists, with unlimited generating.
+              Free still includes 5 normal generations plus 1 emergency generation
+              in any rolling 7 days.
             </p>
 
             <p className="pro-modal-small">Pro is £3.99 one-off.</p>
@@ -2087,7 +2041,7 @@ Avoid repeat pairings from the grouping marked as used              </label>
           <div className="pro-modal">
             <div className="pro-modal-badge">Buddy Matcher Pro</div>
 
-            <div className="pro-modal-price-pill">£3.99 one-off</div>
+            <div className="pro-modal-price-pill">£3.99 once · no subscription</div>
 
             <h3>Get full control with Pro</h3>
 
@@ -2097,36 +2051,11 @@ Avoid repeat pairings from the grouping marked as used              </label>
             </p>
 
             <div className="pro-benefit-list">
-              <div className="pro-benefit-item">
-                <span>🚫</span>
-                <p>Keep specific people apart with “don’t group these two”</p>
-              </div>
-
-              <div className="pro-benefit-item">
-                <span>🔁</span>
-                <p>Avoid repeat pairings where possible</p>
-              </div>
-
-              <div className="pro-benefit-item">
-                <span>⭐</span>
-                <p>Spread group leaders across groups</p>
-              </div>
-
-              <div className="pro-benefit-item">
-                <span>💾</span>
-                <p>Save reusable lists so you do not retype names every time</p>
-              </div>
-
-              <div className="pro-benefit-item">
-                <span>👥</span>
-                <p>Make groups of 4, 5, 6 or any custom size</p>
-              </div>
-
-              <div className="pro-benefit-item">
-                <span>📄</span>
-                <p>Export or print clean group layouts when needed</p>
-              </div>
+              {proFeatures.slice(0, 3).map(feature => <div key={feature.title} className="pro-benefit-item"><span aria-hidden="true">{feature.icon}</span><p><strong>{feature.title}</strong> — {feature.text}</p></div>)}
             </div>
+            <details className="pro-secondary-features"><summary>More included with Pro</summary>
+              {proFeatures.slice(3).map(feature => <p key={feature.title}><strong>{feature.title}</strong> — {feature.text}</p>)}
+            </details>
 
             <p className="pro-modal-small">
               No subscription. Pay once and use it forever.
@@ -2137,90 +2066,14 @@ Avoid repeat pairings from the grouping marked as used              </label>
             </p>
 
             <div className="pro-modal-actions">
-              {isLoggedIn ? (
-                <Link
-                  href="/upgrade"
-                  className="btn btn-success"
-                  onClick={() => {
-                    void (async () => {
-                      const sessionId = getSessionId();
-                      if (!sessionId) return;
-
-                      const {
-                        data: { user },
-                      } = await supabase.auth.getUser();
-
-                      await supabase.from("usage_events").insert({
-                        event_type: "upgrade_clicked",
-                        session_id: sessionId,
-                        user_id: user?.id ?? null,
-                        metadata: {
-                          source: "pro_modal",
-                          cta: "go_pro",
-                          reason: lockedReason,
-                        },
-                      });
-                    })();
-                  }}
-                >
-                  Go Pro
-                </Link>
-              ) : (
-                <Link
-                  href="/login?next=/upgrade&source=pro_modal"
-                  className="btn btn-success"
-                  onClick={() => {
-                    void (async () => {
-                      const sessionId = getSessionId();
-                      if (!sessionId) return;
-
-                      await supabase.from("usage_events").insert({
-                        event_type: "upgrade_clicked",
-                        session_id: sessionId,
-                        user_id: null,
-                        metadata: {
-                          source: "pro_modal",
-                          cta: "log_in_to_continue_to_upgrade",
-                          reason: lockedReason,
-                        },
-                      });
-                    })();
-                  }}
-                >
-                  Log in to upgrade
-                </Link>
-              )}
-
-              {!isLoggedIn && (
-                <Link
-                  href="/upgrade"
-                  className="btn btn-outline-secondary"
-                  onClick={() => {
-                    void (async () => {
-                      const sessionId = getSessionId();
-                      if (!sessionId) return;
-
-                      await supabase.from("usage_events").insert({
-                        event_type: "upgrade_clicked",
-                        session_id: sessionId,
-                        user_id: null,
-                        metadata: {
-                          source: "pro_modal",
-                          cta: "see_pro_features",
-                          reason: lockedReason,
-                        },
-                      });
-                    })();
-                  }}
-                >
-                  See Pro features
-                </Link>
-              )}
+              <Link href="/upgrade" className="btn btn-success" onClick={() => {
+                void trackUsageEvent("upgrade_clicked", { source: "pro_modal", cta: "go_pro", reason: lockedReason });
+              }}>Get Pro for £3.99</Link>
 
               <button
                 type="button"
                 className="btn btn-outline-secondary"
-                onClick={() => setShowProModal(false)}
+                onClick={() => { setShowProModal(false); setShowProFeedback(true); void trackUsageEvent("pro_modal_declined", { source: "pro_modal", reason: lockedReason }); }}
               >
                 Maybe later
               </button>
@@ -2228,6 +2081,7 @@ Avoid repeat pairings from the grouping marked as used              </label>
           </div>
         </div>
       )}
+      {showProFeedback && <ProFeedback reason={lockedReason} onClose={() => setShowProFeedback(false)} />}
     </>
   );
 }

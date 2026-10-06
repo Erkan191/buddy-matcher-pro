@@ -1,53 +1,18 @@
 "use client";
+import { getSessionId, trackUsageEvent } from "@/lib/usageAnalytics";
 
 import Link from "next/link";
+import { getAttribution } from "@/lib/attribution.mjs";
+import { proFeatures } from "@/lib/proFeatures";
 import BrandLogo from "@/components/BrandLogo";
 import { useEffect, useState } from "react";
 import { supabase } from "@/supabaseClient";
-
-function getSessionId() {
-  if (typeof window === "undefined") return "";
-
-  let sessionId = window.localStorage.getItem("bm_session_id");
-
-  if (!sessionId) {
-    sessionId = crypto.randomUUID();
-    window.localStorage.setItem("bm_session_id", sessionId);
-  }
-
-  return sessionId;
-}
-
-async function trackUsageEvent(eventType, metadata = {}, userId) {
-  try {
-    const sessionId = getSessionId();
-    if (!sessionId) return;
-
-    let resolvedUserId = userId;
-
-    if (resolvedUserId === undefined) {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      resolvedUserId = session?.user?.id ?? null;
-    }
-
-    await supabase.from("usage_events").insert({
-      event_type: eventType,
-      session_id: sessionId,
-      user_id: resolvedUserId ?? null,
-      metadata,
-    });
-  } catch (error) {
-    console.error("Could not track usage event:", error);
-  }
-}
 
 export default function UpgradePage() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
     void trackUsageEvent("upgrade_page_view", {
       path: window.location.pathname,
     });
@@ -79,6 +44,7 @@ export default function UpgradePage() {
         },
         body: JSON.stringify({
           sessionId,
+          attribution: getAttribution(),
         }),
       });
 
@@ -132,92 +98,33 @@ export default function UpgradePage() {
       </nav>
 
       <div className="section-wrap upgrade-wrap">
-        <section className="upgrade-hero">
+        <section className="upgrade-hero conversion-hero">
           <div className="upgrade-copy">
             <div className="hero-badge">Buddy Matcher Pro</div>
-
-            <h1>Make controlled groups without the extra admin</h1>
-
-            <p className="upgrade-sub">
-              Keep certain people apart, avoid repeat pairings, spread leaders
-              and save reusable lists while keeping the speed of random generation.
-            </p>
-
-            <div className="hero-proof">
-              Built for classrooms, teams, workshops, clubs and coaches
-            </div>
-          </div>
-
-          <div className="price-box">
-            <h2>Simple pricing</h2>
-
-            <p className="price">
-              £3.99 <span>one-off</span>
-            </p>
-
-            <p className="price-sub">
-              No subscription. Pay once and use it forever.
-            </p>
-
-            <button
-              className="btn btn-success btn-lg"
-              onClick={handleUpgrade}
-              disabled={isLoading}
-            >
-              {isLoading ? "Loading checkout..." : "Upgrade to Pro"}
+            <h1>Better pairings.<br />Less lesson prep.</h1>
+            <p className="conversion-price">£3.99 once · no subscription</p>
+            <ul className="conversion-benefits">
+              <li><strong>Keep certain students apart</strong><span>“Don’t group these two” puts you in control.</span></li>
+              <li><strong>Avoid repeat pairings</strong><span>Give students a different partner next time.</span></li>
+              <li><strong>Save class lists</strong><span>Get ready for the next lesson without retyping.</span></li>
+            </ul>
+            <button className="btn btn-success btn-lg" onClick={handleUpgrade} disabled={isLoading}>
+              {isLoading ? "Loading checkout..." : "Get Pro for £3.99"}
             </button>
-
-            <p
-              className="price-sub"
-              style={{ margin: "1rem 0 0", fontSize: "0.875rem", lineHeight: 1.5 }}
-            >
-              <strong>Having trouble paying?</strong>
-              <br />
-              If checkout fails, you can try another card, try again later, or{" "}
-              <a href="mailto:erkan.said22@gmail.com">email me</a> and I’ll help.
-            </p>
+            <p className="conversion-note">One payment. Unlimited generating. Free account required.</p>
           </div>
-        </section>
-
-        <section className="upgrade-section highlight">
-          <h2>Why upgrade?</h2>
-          <ul>
-            <li>Same people keep ending up together</li>
-            <li>You have to manually keep certain people apart</li>
-            <li>Some groups need leaders spread out fairly</li>
-            <li>Grouping takes longer than it should</li>
-          </ul>
         </section>
 
         <section className="upgrade-section">
-          <h2>What you get</h2>
-
+          <h2>More control for your everyday groups</h2>
+          <p>Avoid repeats uses the last grouping you explicitly marked as used for these names in this browser. It reduces repeats where possible.</p>
           <ul className="upgrade-features">
-            <li>
-              <strong>Do not group these two</strong>
-              <span>Keep specific people apart when needed.</span>
-            </li>
-            <li>
-              <strong>Avoid repeat pairings</strong>
-              <span>Reduce the chance of the same people ending up together.</span>
-            </li>
-            <li>
-              <strong>Spread group leaders</strong>
-              <span>Assign leaders and distribute them across groups.</span>
-            </li>
-            <li>
-              <strong>Save reusable lists</strong>
-              <span>Load regular classes, teams or clubs without retyping.</span>
-            </li>
-            <li>
-              <strong>Flexible group sizes</strong>
-              <span>Use groups of 4, 5, 6 or custom sizes.</span>
-            </li>
-            <li>
-              <strong>Export and print</strong>
-              <span>Download CSVs or print clean layouts when needed.</span>
-            </li>
+            {proFeatures.slice(3).map(feature => <li key={feature.title}><strong>{feature.title}</strong><span>{feature.text}</span></li>)}
           </ul>
+        </section>
+        <section className="upgrade-section">
+          <h2>Having trouble paying?</h2>
+          <p>Try another card, try again later, or <a href="mailto:erkan.said22@gmail.com">email me</a> and I’ll help.</p>
         </section>
 
         <section className="upgrade-footer-note">

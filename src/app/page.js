@@ -3,7 +3,7 @@ import { pageMetadata, siteUrl } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "Random Group Generator for Teachers & Teams",
-  description: "Create random pairs and trios for free. Pro adds larger groups, saved lists, fewer repeat pairings and a clear Student View for your classroom.",
+  description: "Create random pairs and trios for free. Pro helps you keep students apart, avoid repeat pairings and save class lists, with Student View and flexible group sizes.",
   path: "/",
 });
 

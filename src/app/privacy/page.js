@@ -39,6 +39,15 @@ export default function PrivacyPage() {
               Payments are handled by Stripe. Buddy Matcher does not store your full card details.
             </p>
 
+            <h2>Usage and optional feedback</h2>
+            <p>
+              We record page paths, feature use, and optional Pro feedback choices to understand
+              how Buddy Matcher is used. Events use a browser identifier and, when signed in,
+              your account ID. Campaign tags and the referring page (without its query or
+              fragment) are remembered in this tab for attribution and may accompany checkout.
+              These analytics do not include the student names you enter.
+            </p>
+
             <h2>Contact</h2>
             <p>
               For privacy questions, email{" "}

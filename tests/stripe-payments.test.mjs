@@ -94,6 +94,22 @@ test("already Pro users cannot start another purchase", async () => {
   assert.equal(state.created.length, 0);
 });
 
+test("checkout carries bounded campaign attribution into Stripe and the usage event without trusting identity fields", async () => {
+  const { state, service } = fixture();
+  const response = await service.checkout(request({ sessionId: userId, attribution: {
+    utm_source: "instagram", utm_campaign: "teacher_outreach", landing_path: "/teachers",
+    session_id: otherUserId, user_id: otherUserId, referrer: "https://instagram.com/?token=secret",
+  } }));
+  assert.equal(response.status, 200);
+  assert.equal(state.created[0].metadata.session_id, userId);
+  assert.equal(state.created[0].metadata.user_id, undefined);
+  assert.equal(state.created[0].metadata.utm_source, "instagram");
+  assert.equal(state.created[0].metadata.referrer, "https://instagram.com/");
+  assert.equal(state.events[0].metadata.utm_campaign, "teacher_outreach");
+  assert.equal(state.events[0].metadata.landing_path, "/teachers");
+  assert.equal(state.created[0].line_items[0].price, "price_expected");
+});
+
 test("malformed JSON is a client error", async () => {
   const { service } = fixture();
   const req = new Request("http://localhost/api", { method: "POST", headers: { Authorization: "Bearer valid" }, body: "{" });

@@ -1,12 +1,8 @@
+import { proFeatures } from "@/lib/proFeatures";
 import Link from "next/link";
 import styles from "./HomeProSection.module.css";
 
-const benefits = [
-  { number: "01", title: "Set simple grouping rules", text: "Keep specific people apart, reduce repeat pairings and spread group leaders." },
-  { number: "02", title: "Get ready for the next lesson", text: "Save and reuse lists. Make groups of 4, 5, 6 or a custom size, with unlimited generating." },
-  { number: "03", title: "Put your groups on the big screen", text: "Student View shows the final groups while keeping your setup controls out of view.", href: "/projector-mode", link: "Explore projector mode" },
-  { number: "04", title: "Take your groups with you", text: "Export to CSV or print a clean layout for the lesson, workshop or club session." },
-];
+const benefits = proFeatures.map((feature, index) => ({ ...feature, number: String(index + 1).padStart(2, "0") }));
 
 export default function HomeProSection({ isPro }) {
   return (
@@ -16,8 +12,8 @@ export default function HomeProSection({ isPro }) {
           <div className={styles.intro}>
             <div>
               <span className={styles.eyebrow}>Buddy Matcher Pro</span>
-              <h2 id="home-pro-title">A little more control.<br />A lot less organising.</h2>
-              <p>Quick pairs and trios are free. For your regular classes, teams and clubs, Pro brings your lists, grouping rules and presentation tools together.</p>
+              <h2 id="home-pro-title">Keep the right students apart.<br />Make fresh pairings easier.</h2>
+              <p>Keep certain students apart, avoid repeat pairings and save class lists. Pro helps you prepare your regular classes, teams and clubs in less time.</p>
             </div>
             <div className={styles.offer}>
               {isPro ? (
@@ -31,7 +27,7 @@ export default function HomeProSection({ isPro }) {
                 <>
                   <div className={styles.price}>£3.99 <span>once</span></div>
                   <p>No subscription. No monthly bill.</p>
-                  <Link href="/upgrade" className="btn btn-success">Get Buddy Matcher Pro <span aria-hidden="true">→</span></Link>
+                  <Link href="/upgrade" className="btn btn-success">Get Pro for £3.99 <span aria-hidden="true">→</span></Link>
                   <span className={styles.offerNote}>One payment unlocks all Pro features.</span>
                 </>
               )}

@@ -179,8 +179,8 @@ export default function HomePage() {
 
             <p className="hero-sub">
   Paste your names and make random pairs or trios in seconds. For regular
-  lessons, workshops and clubs, Pro adds larger groups, pairing rules,
-  saved lists and a clear Student View for the big screen.
+  lessons, workshops and clubs, Pro helps you keep certain students apart,
+  avoid repeat pairings and save class lists.
 </p>
 
             <div className="hero-actions">
@@ -270,8 +270,8 @@ export default function HomePage() {
   <div className="feature-box">
     <h3>Controlled Pro groups</h3>
     <p>
-      Keep certain people apart, avoid repeat pairings and spread named group
-      leaders across different groups.
+      Keep certain students apart, avoid repeat pairings and save class lists
+      for your next lesson.
     </p>
   </div>
 
@@ -324,18 +324,19 @@ export default function HomePage() {
         </p>
       </div>
 
-      <div className="faq-item">
-        <h3>Can I assign group leaders?</h3>
-        <p>
-          Yes. Pro lets you mark group leaders and spread them across different groups.
-        </p>
-      </div>
 
       <div className="faq-item">
         <h3>Can I display groups on a projector or interactive whiteboard?</h3>
         <p>
           Yes. Pro includes Student View for showing final groups on your classroom
           screen, with your setup controls hidden. <Link href="/projector-mode" style={{ color: "#17673e", textDecoration: "underline" }}>See the projector mode guide</Link>.
+        </p>
+      </div>
+
+      <div className="faq-item">
+        <h3>Can I assign group leaders?</h3>
+        <p>
+          Yes. Pro lets you mark group leaders and spread them across different groups.
         </p>
       </div>
 

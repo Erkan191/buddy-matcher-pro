@@ -1,3 +1,5 @@
+import { sanitizeAttribution } from "./attribution.mjs";
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CHECKOUT_ID = /^cs_(live|test)_[A-Za-z0-9]+$/;
 
@@ -43,7 +45,7 @@ export function createPaymentService({ stripe, admin, priceId, siteUrl, liveMode
       event_type: eventType,
       user_id: session.client_reference_id,
       session_id: session.metadata?.session_id || null,
-      metadata: { stripe_checkout_session_id: session.id, ...extra },
+      metadata: { ...sanitizeAttribution(session.metadata), stripe_checkout_session_id: session.id, ...extra },
     });
     if (error) logger.error("Payment event recording failed", { eventType });
   }
@@ -109,7 +111,7 @@ export function createPaymentService({ stripe, admin, priceId, siteUrl, liveMode
       line_items: [{ price: priceId, quantity: 1 }],
       client_reference_id: user.id,
       customer_email: user.email,
-      metadata: { session_id: UUID.test(body.sessionId || "") ? body.sessionId : "" },
+      metadata: { ...sanitizeAttribution(body.attribution), session_id: UUID.test(body.sessionId || "") ? body.sessionId : "" },
       success_url: `${base.origin}/upgrade/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base.origin}/upgrade`,
     });

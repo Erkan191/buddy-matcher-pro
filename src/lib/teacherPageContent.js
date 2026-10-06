@@ -13,13 +13,13 @@ const teacherPages = {
     title: "Buddy Matcher for Teachers",
     intro: [
       "Buddy Matcher is a simple group maker for classrooms, clubs, tutoring sessions, workshops and teams. Paste in a list of names, choose the group size, and create pairs or groups without turning it into a spreadsheet job.",
-      "For teachers, the useful part is not just randomness. Classroom grouping often needs a little control: avoiding awkward student pairings, mixing friendship groups, spreading confident leaders and reducing the chance that the same students work together every time.",
+      "For teachers, the useful part is not just randomness. Classroom grouping often needs a little control: avoiding awkward student pairings, mixing friendship groups, reducing repeat pairings and reusing class lists. Pro also includes Student View, bigger groups, print/export and group leaders.",
     ],
     highlights: [
       "Create pairs, trios and larger groups from one class list.",
       "Keep specific students apart when that helps the lesson run smoothly.",
       "Reduce repeat pairings where possible across repeated activities.",
-      "Save named lists, spread group leaders, export CSVs and print results with Pro.",
+      "Save class lists, use Student View, make bigger groups, print/export and optionally spread group leaders with Pro.",
     ],
     sections: [
       {
@@ -33,7 +33,7 @@ const teacherPages = {
         heading: "Useful for everyday lesson moments",
         body: [
           "Use it for talk partners, practical tasks, reading groups, revision activities, project groups, seating changes, clubs and short collaborative tasks. It also works outside school for workshops, training sessions and community groups.",
-          "The free tool is enough for occasional random pairs and trios. Pro adds saved lists, specific pairing rules and an Avoid repeats option for regular classroom use.",
+          "The free tool is enough for occasional random pairs and trios. Pro adds blocked pairs, an Avoid repeats option and saved class lists for regular classroom use.",
         ],
       },
       {
@@ -82,7 +82,7 @@ const teacherPages = {
       "Paste names from a register, spreadsheet or notes app.",
       "Generate pairs, trios and Pro group sizes like 4, 5, 6 or custom.",
       "Handle awkward leftovers without leaving one student isolated.",
-      "Use Pro controls for blocked pairs, saved lists, leaders and repeat history.",
+      "Use Pro controls for blocked pairs, repeat history and saved lists, plus Student View, print/export and group leaders.",
     ],
     sections: [
       {
@@ -140,7 +140,7 @@ const teacherPages = {
     title: "How to Randomly Group Students Fairly",
     intro: [
       "Fair student grouping does not mean every group has to be perfect. It means students can see a clear process, the teacher can avoid obvious problems, and the same students do not always get the same experience.",
-      "Buddy Matcher helps by starting with a random process, then adding practical controls for repeat pairings, group leaders, saved lists and pairs that should not be grouped together.",
+      "Buddy Matcher helps by starting with a random process, then adding practical controls for pairs that should stay apart, repeat pairings and saved lists. Student View, bigger groups, print/export and group leaders are also included.",
     ],
     highlights: [
       "Use randomness to reduce arguments about who works with whom.",
@@ -335,7 +335,7 @@ const teacherPages = {
     title: "Random Group Generator for Primary Teachers",
     intro: [
       "Primary classrooms need grouping tools that are quick, calm and easy to explain. Buddy Matcher helps primary teachers make random pairs and groups for table work, carpet activities, practical tasks, reading, PE-style activities and short collaborative lessons.",
-      "It can be used as a simple random group generator, or with Pro controls when you need saved class lists, group leaders, no-repeat pairings or a way to keep specific students apart for a task.",
+      "It can be used as a simple random group generator, or with Pro controls when you need to keep specific students apart, avoid repeat pairings or save class lists. Student View, bigger groups, print/export and group leaders are also available.",
     ],
     highlights: [
       "Make quick pairs, trios or larger classroom groups.",

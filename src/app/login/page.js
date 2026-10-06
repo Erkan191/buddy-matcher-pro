@@ -1,22 +1,10 @@
 "use client";
+import { trackUsageEvent } from "@/lib/usageAnalytics";
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/supabaseClient";
 import Link from "next/link";
-
-function getSessionId() {
-  if (typeof window === "undefined") return "";
-
-  let sessionId = window.localStorage.getItem("bm_session_id");
-
-  if (!sessionId) {
-    sessionId = crypto.randomUUID();
-    window.localStorage.setItem("bm_session_id", sessionId);
-  }
-
-  return sessionId;
-}
 
 function getSafeNextPath(value) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) return "/";
@@ -27,32 +15,6 @@ function getSafeNextPath(value) {
     return `${url.pathname}${url.search}${url.hash}`;
   } catch {
     return "/";
-  }
-}
-
-async function trackUsageEvent(eventType, metadata = {}, userId) {
-  try {
-    const sessionId = getSessionId();
-    if (!sessionId) return;
-
-    let resolvedUserId = userId;
-
-    if (resolvedUserId === undefined) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      resolvedUserId = user?.id ?? null;
-    }
-
-    await supabase.from("usage_events").insert({
-      event_type: eventType,
-      session_id: sessionId,
-      user_id: resolvedUserId ?? null,
-      metadata,
-    });
-  } catch (error) {
-    console.error("Could not track usage event:", error);
   }
 }
 
