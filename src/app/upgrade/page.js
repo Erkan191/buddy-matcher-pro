@@ -16,6 +16,9 @@ export default function UpgradePage() {
     void trackUsageEvent("upgrade_page_view", {
       path: window.location.pathname,
     });
+    if (new URLSearchParams(window.location.search).get("checkout") === "cancelled") {
+      void trackUsageEvent("checkout_cancel_return", { source: "stripe_checkout" });
+    }
   }, []);
 
   async function handleUpgrade() {
@@ -31,16 +34,13 @@ export default function UpgradePage() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session?.access_token) {
-        window.location.href = "/login?next=/upgrade&source=upgrade_page";
-        return;
-      }
-
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
+          ...(session?.access_token
+            ? { Authorization: `Bearer ${session.access_token}` }
+            : {}),
         },
         body: JSON.stringify({
           sessionId,
@@ -51,8 +51,7 @@ export default function UpgradePage() {
       const data = await response.json();
 
       if (response.status === 401) {
-        window.location.href = "/login?next=/upgrade&source=upgrade_page";
-        return;
+        throw new Error("Your sign-in expired. Refresh the page and try again.");
       }
       if (response.status === 409 && data.status === "active") {
         window.location.href = "/";
@@ -68,7 +67,7 @@ export default function UpgradePage() {
         {
           source: "upgrade_page",
         },
-        session.user.id
+        session?.user?.id
       );
 
       window.location.href = data.url;
@@ -111,7 +110,7 @@ export default function UpgradePage() {
             <button className="btn btn-success btn-lg" onClick={handleUpgrade} disabled={isLoading}>
               {isLoading ? "Loading checkout..." : "Get Pro for £3.99"}
             </button>
-            <p className="conversion-note">One payment. Unlimited generating. Free account required.</p>
+            <p className="conversion-note">Pay securely first. Create or sign in to your free account after payment to unlock Pro.</p>
           </div>
         </section>
 
@@ -129,7 +128,7 @@ export default function UpgradePage() {
 
         <section className="upgrade-footer-note">
           <p className="trust">
-            Account creation is free. Pro unlocks after the one-off payment.
+            No account is needed before payment. After paying, use the same email to create or sign in to your free account and unlock Pro.
           </p>
 
           <Link href="/" className="back-link">

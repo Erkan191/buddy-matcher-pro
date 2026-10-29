@@ -12,6 +12,7 @@ const stripeSdk = new Stripe("sk_test_regression_only");
 function fixture() {
   const state = {
     pro: false, rpcError: false, authError: false, intentStatus: "processing", created: [], events: [], grants: [], receipts: new Set(),
+    userEmail: "login@example.invalid", emailConfirmed: true,
     session: { id: sessionId, client_reference_id: userId, mode: "payment", livemode: false,
       amount_total: 399, currency: "gbp", status: "complete", payment_status: "paid",
       payment_intent: "pi_regression", metadata: { session_id: userId },
@@ -22,8 +23,11 @@ function fixture() {
   const admin = {
     auth: {
       getUser: async (token) => token === "valid" && !state.authError
-        ? { data: { user: { id: userId, email: "login@example.invalid" } } } : { error: new Error("Invalid") },
-      admin: { getUserById: async (id) => ({ data: { user: { id, email: "login@example.invalid" } } }) },
+        ? { data: { user: { id: userId, email: state.userEmail,
+          email_confirmed_at: state.emailConfirmed ? "2026-01-01T00:00:00Z" : null } } }
+        : { error: new Error("Invalid") },
+      admin: { getUserById: async (id) => ({ data: { user: { id, email: state.userEmail,
+        email_confirmed_at: "2026-01-01T00:00:00Z" } } }) },
     },
     from: (table) => ({
       select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { is_pro: state.pro } }) }) }),
@@ -42,6 +46,8 @@ function fixture() {
     checkout: { sessions: {
       retrieve: async (id) => { assert.equal(id, sessionId); return state.session; },
       listLineItems: async () => state.items,
+      list: async ({ payment_intent }) => payment_intent === state.session.payment_intent
+        ? { data: [state.session] } : { data: [] },
       create: async (args) => {
         state.created.push(args);
         return { ...args, id: sessionId, url: "https://checkout.stripe.com/example" };
@@ -70,12 +76,18 @@ function webhook(type = "checkout.session.completed", overrides = {}, validSigna
     headers: { "stripe-signature": signature }, body: payload });
 }
 
-test("checkout rejects missing and invalid bearer authentication before creating Stripe sessions", async () => {
-  for (const token of [null, "expired"]) {
-    const { state, service } = fixture();
-    assert.equal((await service.checkout(request({ userId }, token))).status, 401);
-    assert.equal(state.created.length, 0);
-  }
+test("checkout allows payment first without an account but rejects an invalid supplied login", async () => {
+  const anonymous = fixture();
+  const response = await anonymous.service.checkout(request({ sessionId: userId }, null));
+  assert.equal(response.status, 200);
+  assert.equal(anonymous.state.created[0].client_reference_id, undefined);
+  assert.equal(anonymous.state.created[0].customer_email, undefined);
+  assert.equal(anonymous.state.created[0].metadata.purchase_flow, "payment_first_v1");
+  assert.equal(anonymous.state.events[0].user_id, null);
+
+  const invalid = fixture();
+  assert.equal((await invalid.service.checkout(request({}, "expired"))).status, 401);
+  assert.equal(invalid.state.created.length, 0);
 });
 
 test("checkout binds the verified user, ignoring a spoofed userId and using auth email", async () => {
@@ -120,7 +132,31 @@ test("payment status is private to the checkout owner", async () => {
   const { state, service } = fixture(); state.session.client_reference_id = otherUserId;
   assert.equal((await service.status(request({ sessionId }))).status, 404);
   assert.equal(state.grants.length, 0);
-  assert.equal((await service.status(request({ sessionId }, null))).status, 401);
+  assert.deepEqual(await (await service.status(request({ sessionId }, null))).json(), { status: "account_required" });
+});
+
+test("an anonymous paid checkout requires a confirmed account with the checkout email", async () => {
+  const { state, service } = fixture();
+  state.session.client_reference_id = null;
+  state.session.metadata.purchase_flow = "payment_first_v1";
+  state.session.customer_details.email = "buyer@example.invalid";
+
+  assert.deepEqual(await (await service.status(request({ sessionId }, null))).json(), { status: "account_required" });
+  assert.equal(state.grants.length, 0);
+
+  state.userEmail = "someone-else@example.invalid";
+  assert.deepEqual(await (await service.status(request({ sessionId }))).json(), { status: "email_mismatch" });
+  assert.equal(state.grants.length, 0);
+
+  state.userEmail = "buyer@example.invalid";
+  state.emailConfirmed = false;
+  assert.deepEqual(await (await service.status(request({ sessionId }))).json(), { status: "email_mismatch" });
+  assert.equal(state.grants.length, 0);
+
+  state.emailConfirmed = true;
+  assert.deepEqual(await (await service.status(request({ sessionId }))).json(), { status: "active" });
+  assert.equal(state.grants[0].p_user_id, userId);
+  assert.equal(state.grants[0].p_email, "buyer@example.invalid");
 });
 
 test("missing/invalid checkout IDs cannot report success", async () => {
@@ -201,6 +237,37 @@ test("delayed failure records failure and does not grant access", async () => {
   assert.equal((await service.webhook(webhook("checkout.session.async_payment_failed"))).status, 200);
   assert.equal(state.events[0].event_type, "payment_failed");
   assert.equal(state.grants.length, 0);
+});
+
+test("a successful payment-first checkout waits safely for account claiming", async () => {
+  const { state, service } = fixture();
+  state.session.client_reference_id = null;
+  state.session.metadata.purchase_flow = "payment_first_v1";
+  state.session.customer_details.email = "buyer@example.invalid";
+  assert.equal((await service.webhook(webhook())).status, 200);
+  assert.equal(state.grants.length, 0);
+  assert.equal(state.events[0].event_type, "payment_success_pending_account");
+});
+
+test("expired checkout and card failures are recorded with non-sensitive reason codes", async () => {
+  const expired = fixture();
+  expired.state.session.status = "expired";
+  expired.state.session.payment_status = "unpaid";
+  assert.equal((await expired.service.webhook(webhook("checkout.session.expired"))).status, 200);
+  assert.equal(expired.state.events[0].event_type, "checkout_expired");
+
+  const failed = fixture();
+  failed.state.session.payment_status = "unpaid";
+  const response = await failed.service.webhook(webhook("payment_intent.payment_failed", {
+    data: { object: { id: "pi_regression", last_payment_error: {
+      decline_code: "insufficient_funds", code: "card_declined", type: "card_error",
+    } } },
+  }));
+  assert.equal(response.status, 200);
+  assert.equal(failed.state.events[0].event_type, "payment_failed");
+  assert.equal(failed.state.events[0].metadata.decline_code, "insufficient_funds");
+  assert.equal(failed.state.events[0].metadata.error_code, "card_declined");
+  assert.equal(failed.state.grants.length, 0);
 });
 
 test("a completed checkout with a failed delayed payment no longer tells the customer to wait", async () => {

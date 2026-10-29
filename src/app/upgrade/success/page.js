@@ -43,6 +43,18 @@ const messages = {
     description:
       "Use the Buddy Matcher account you used at checkout. We will bring you back here to confirm your payment and Pro access.",
   },
+  account_required: {
+    badge: "Payment received",
+    title: "Create your account to unlock Pro",
+    description:
+      "Your payment is confirmed. Create a free account or sign in using the same email you entered at checkout.",
+  },
+  email_mismatch: {
+    badge: "Payment received",
+    title: "Use the email entered at checkout",
+    description:
+      "This payment belongs to a different email. Sign in or create an account using the email you entered during Stripe checkout.",
+  },
   missing: {
     badge: "Checkout details missing",
     title: "We need your checkout details",
@@ -76,7 +88,7 @@ export default function UpgradeSuccessPage() {
     const sessionId = new URLSearchParams(window.location.search).get("session_id");
     const loginHref = `/login?next=${encodeURIComponent(
       `${window.location.pathname}${window.location.search}`
-    )}`;
+    )}&source=post_payment`;
 
     function update(status, busy = false) {
       if (!cancelled && !timedOut) {
@@ -114,19 +126,15 @@ export default function UpgradeSuccessPage() {
         if (cancelled || timedOut) return;
         if (error) throw error;
 
-        if (!data.session?.access_token) {
-          window.clearTimeout(deadlineTimer);
-          update("login");
-          return;
-        }
-
         controller = new AbortController();
         requestTimer = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
         const response = await fetch("/api/stripe/status", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${data.session.access_token}`,
+            ...(data.session?.access_token
+              ? { Authorization: `Bearer ${data.session.access_token}` }
+              : {}),
           },
           body: JSON.stringify({ sessionId }),
           cache: "no-store",
@@ -134,16 +142,16 @@ export default function UpgradeSuccessPage() {
         });
         if (cancelled || timedOut) return;
 
-        if (response.status === 401 || response.status === 404) {
+        if (response.status === 404) {
           window.clearTimeout(deadlineTimer);
-          update(response.status === 401 ? "login" : "unavailable");
+          update("unavailable");
           return;
         }
         if (!response.ok) throw new Error("Could not check payment status.");
 
         const result = await response.json();
         if (cancelled || timedOut) return;
-        if (!["active", "pending", "unpaid", "expired"].includes(result?.status)) {
+        if (!["active", "pending", "unpaid", "expired", "account_required", "email_mismatch"].includes(result?.status)) {
           throw new Error("Unrecognised payment status.");
         }
 
@@ -176,7 +184,7 @@ export default function UpgradeSuccessPage() {
   }, [attempt]);
 
   const message = messages[view.status];
-  const needsLogin = view.status === "login" || view.status === "unavailable";
+  const needsLogin = ["login", "account_required", "email_mismatch", "unavailable"].includes(view.status);
   const canRetry = !view.busy && ["pending", "unpaid", "error"].includes(view.status);
 
   function checkAgain() {
@@ -214,7 +222,11 @@ export default function UpgradeSuccessPage() {
               href={view.loginHref}
               className="rounded-xl bg-green-600 px-5 py-3 font-medium text-white hover:bg-green-700"
             >
-              Sign in to check
+              {view.status === "account_required"
+                ? "Create account or sign in"
+                : view.status === "email_mismatch"
+                ? "Use the checkout email"
+                : "Sign in to check"}
             </Link>
           )}
           {canRetry && (

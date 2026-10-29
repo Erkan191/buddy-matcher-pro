@@ -34,6 +34,11 @@ export function createPaymentService({ stripe, admin, priceId, siteUrl, liveMode
     return data.user;
   }
 
+  async function optionalAuthenticate(request) {
+    if (!request.headers.get("authorization")) return null;
+    return authenticate(request);
+  }
+
   async function isPro(userId) {
     const { data, error } = await admin.from("users").select("is_pro").eq("id", userId).maybeSingle();
     if (error) throw new Error("Account lookup failed");
@@ -43,7 +48,7 @@ export function createPaymentService({ stripe, admin, priceId, siteUrl, liveMode
   async function track(eventType, session, extra = {}) {
     const { error } = await admin.from("usage_events").insert({
       event_type: eventType,
-      user_id: session.client_reference_id,
+      user_id: UUID.test(session.client_reference_id || "") ? session.client_reference_id : null,
       session_id: session.metadata?.session_id || null,
       metadata: { ...sanitizeAttribution(session.metadata), stripe_checkout_session_id: session.id, ...extra },
     });
@@ -64,7 +69,11 @@ export function createPaymentService({ stripe, admin, priceId, siteUrl, liveMode
 
   async function validatePurchase(session) {
     if (!priceId) throw new Error("Missing Stripe price configuration");
-    if (session.mode !== "payment" || session.livemode !== liveMode || !UUID.test(session.client_reference_id || "")) {
+    const hasBoundAccount = UUID.test(session.client_reference_id || "");
+    const isPaymentFirst = !session.client_reference_id &&
+      session.metadata?.purchase_flow === "payment_first_v1" &&
+      UUID.test(session.metadata?.session_id || "");
+    if (session.mode !== "payment" || session.livemode !== liveMode || (!hasBoundAccount && !isPaymentFirst)) {
       throw new PaymentError("This checkout cannot activate Pro. Please contact support.", 422);
     }
     const items = await stripe.checkout.sessions.listLineItems(session.id, { limit: 2 });
@@ -78,21 +87,36 @@ export function createPaymentService({ stripe, admin, priceId, siteUrl, liveMode
     }
   }
 
-  async function fulfill(session, validated = false) {
+  function checkoutEmail(session) {
+    const value = session.customer_details?.email || session.customer_email;
+    return typeof value === "string" ? value.trim().toLowerCase() : "";
+  }
+
+  async function fulfill(session, validated = false, claimUser = null) {
     if (!validated) await validatePurchase(session);
     if (session.payment_status !== "paid" || session.status !== "complete") return false;
-    const { data, error } = await admin.auth.admin.getUserById(session.client_reference_id);
-    if (error || !data?.user) throw new Error("Checkout account no longer available");
+    let user;
+    if (session.client_reference_id) {
+      const { data, error } = await admin.auth.admin.getUserById(session.client_reference_id);
+      if (error || !data?.user) throw new Error("Checkout account no longer available");
+      user = data.user;
+    } else {
+      user = claimUser;
+      if (!user?.email_confirmed_at || !checkoutEmail(session) ||
+          user.email?.trim().toLowerCase() !== checkoutEmail(session)) {
+        throw new PaymentError("Use the confirmed account email entered at checkout.", 403);
+      }
+    }
     const paymentIntentId = typeof session.payment_intent === "string"
       ? session.payment_intent : session.payment_intent?.id;
     if (!paymentIntentId) throw new Error("Paid checkout is missing payment reference");
     const { error: fulfillmentError } = await admin.rpc("fulfill_buddy_pro_checkout", {
       p_checkout_session_id: session.id,
-      p_user_id: data.user.id,
+      p_user_id: user.id,
       p_payment_intent_id: paymentIntentId,
       p_amount_total: session.amount_total,
       p_currency: session.currency,
-      p_email: data.user.email || null,
+      p_email: user.email || null,
       p_browser_session_id: session.metadata?.session_id || null,
     });
     if (fulfillmentError) throw new Error("Pro activation failed");
@@ -100,21 +124,32 @@ export function createPaymentService({ stripe, admin, priceId, siteUrl, liveMode
   }
 
   async function handleCheckout(request) {
-    const user = await authenticate(request);
     const body = await readBody(request);
-    if (await isPro(user.id)) return json({ status: "active", error: "You already have Pro." }, 409);
+    const user = await optionalAuthenticate(request);
+    if (user && await isPro(user.id)) return json({ status: "active", error: "You already have Pro." }, 409);
+    const browserSessionId = UUID.test(body.sessionId || "") ? body.sessionId : "";
+    if (!user && !browserSessionId) throw new PaymentError("Please refresh the page and try again.", 400);
     if (!priceId || !siteUrl) throw new Error("Missing checkout configuration");
     const base = new URL(siteUrl);
     if (liveMode && base.protocol !== "https:") throw new Error("Live checkout requires HTTPS");
-    const session = await stripe.checkout.sessions.create({
+    const checkoutParams = {
       mode: "payment",
       line_items: [{ price: priceId, quantity: 1 }],
-      client_reference_id: user.id,
-      customer_email: user.email,
-      metadata: { ...sanitizeAttribution(body.attribution), session_id: UUID.test(body.sessionId || "") ? body.sessionId : "" },
+      metadata: {
+        ...sanitizeAttribution(body.attribution),
+        purchase_flow: "payment_first_v1",
+        session_id: browserSessionId,
+      },
       success_url: `${base.origin}/upgrade/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${base.origin}/upgrade`,
-    });
+      cancel_url: `${base.origin}/upgrade?checkout=cancelled`,
+      integration_identifier: `buddy_matcher_${Array.from({ length: 8 }, () =>
+        String.fromCharCode(97 + Math.floor(Math.random() * 26))).join("")}`,
+    };
+    if (user) {
+      checkoutParams.client_reference_id = user.id;
+      checkoutParams.customer_email = user.email;
+    }
+    const session = await stripe.checkout.sessions.create(checkoutParams);
     if (!session.url) throw new Error("Stripe did not return a checkout URL");
     // Recording failures must not strand a customer after Stripe creates checkout.
     try { await track("checkout_session_created", session); }
@@ -123,14 +158,21 @@ export function createPaymentService({ stripe, admin, priceId, siteUrl, liveMode
   }
 
   async function handleStatus(request) {
-    const user = await authenticate(request);
     const { sessionId } = await readBody(request);
     const session = await retrieveSession(sessionId);
-    // Check ownership before exposing payment state or granting anything.
-    if (session.client_reference_id !== user.id) throw new PaymentError("Checkout not found.", 404);
     await validatePurchase(session);
+    const user = await optionalAuthenticate(request);
+    if (session.client_reference_id && !user) return json({ status: "account_required" });
+    if (session.client_reference_id && session.client_reference_id !== user.id) {
+      throw new PaymentError("Checkout not found.", 404);
+    }
     if (session.status === "complete" && session.payment_status === "paid") {
-      await fulfill(session, true);
+      if (!user) return json({ status: "account_required" });
+      if (!session.client_reference_id &&
+          (!user.email_confirmed_at || user.email?.trim().toLowerCase() !== checkoutEmail(session))) {
+        return json({ status: "email_mismatch" });
+      }
+      await fulfill(session, true, user);
       if (!(await isPro(user.id))) throw new Error("Pro activation is not yet visible");
       return json({ status: "active" });
     }
@@ -164,6 +206,11 @@ export function createPaymentService({ stripe, admin, priceId, siteUrl, liveMode
       const session = await retrieveSession(event.data.object.id);
       try { await fulfill(session); }
       catch (error) {
+        if (error instanceof PaymentError && error.status === 403 &&
+            session.status === "complete" && session.payment_status === "paid") {
+          await track("payment_success_pending_account", session, { stripe_event_id: event.id });
+          return json({ received: true });
+        }
         // A correctly signed event for another product is acknowledged without access.
         if (!(error instanceof PaymentError) || error.status !== 422) throw error;
         logger.error("Checkout rejected for Pro activation", { sessionId: session.id });
@@ -175,6 +222,31 @@ export function createPaymentService({ stripe, admin, priceId, siteUrl, liveMode
         await track("payment_failed", session, { stripe_event_id: event.id });
       } catch (error) {
         if (!(error instanceof PaymentError) || error.status !== 422) throw error;
+      }
+    } else if (event.type === "checkout.session.expired") {
+      const session = await retrieveSession(event.data.object.id);
+      try {
+        await validatePurchase(session);
+        await track("checkout_expired", session, { stripe_event_id: event.id });
+      } catch (error) {
+        if (!(error instanceof PaymentError) || error.status !== 422) throw error;
+      }
+    } else if (event.type === "payment_intent.payment_failed") {
+      const intent = event.data.object;
+      const sessions = await stripe.checkout.sessions.list({ payment_intent: intent.id, limit: 1 });
+      const session = sessions.data?.[0];
+      if (session) {
+        try {
+          await validatePurchase(session);
+          await track("payment_failed", session, {
+            stripe_event_id: event.id,
+            decline_code: intent.last_payment_error?.decline_code || null,
+            error_code: intent.last_payment_error?.code || null,
+            error_type: intent.last_payment_error?.type || null,
+          });
+        } catch (error) {
+          if (!(error instanceof PaymentError) || error.status !== 422) throw error;
+        }
       }
     }
     return json({ received: true });

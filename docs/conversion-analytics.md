@@ -14,11 +14,14 @@ All listed events use the existing `public.usage_events` columns: `event_type`, 
 | --- | --- |
 | `page_view` | `path` is the actual pathname on every route, including client navigation; `previous_path` is the previous pathname in this document, or null on first load. Removed the old homepage-only emitter. Query/hash-only changes are not extra page views. |
 | `pro_modal_declined` | `source: pro_modal`, `reason`: the locked-feature message that opened the modal. Emitted when Maybe later opens feedback. |
-| `pro_decline_feedback` | Same source/reason plus `response`: `one_time_use`, `another_tool`, `features_not_needed`, `account_required`, `payment_issue`, or `other`. Skip/dismiss produces no answer event. |
+| `pro_decline_feedback` | Same source/reason plus `payment_stage: before_checkout` and `response`: `one_time_use`, `another_tool`, `features_not_needed`, `account_required`, `price_not_worth_it`, `payment_method_unavailable`, `checkout_problem`, or `other`. Skip/dismiss produces no answer event. Legacy rows may still contain `payment_issue`. |
 | `projector_mode_opened` | `source: tool`, `group_count`, `total_names`. Only after Pro access and nonempty results allow Student View to open. No names or group contents. |
 | Existing client events | Shared attribution and actual `path` on tool, upgrade, login/signup and checkout events, including `pro_modal_opened`, `upgrade_clicked`, `upgrade_page_view`, `checkout_clicked`, `checkout_redirect_started`, `checkout_error`, `generate_groups` and existing login/signup events. Existing free-quota requests also carry attribution. |
 | `checkout_session_created` | Server event now includes allowlisted attribution and existing `stripe_checkout_session_id`. Stripe Checkout session metadata stores the same attribution alongside the validated browser `session_id`. |
-| `payment_failed` | Retains its server-only status; receives attribution from the Stripe session when available. |
+| `checkout_cancel_return` | Client event emitted when a customer uses Stripe Checkout's return link before payment. |
+| `checkout_expired` | Server webhook event for a Checkout Session that expired without completing. This distinguishes abandonment from a submitted payment failure. |
+| `payment_failed` | Server webhook event for delayed failures and `payment_intent.payment_failed`; stores only Stripe event ID and non-sensitive error/decline codes, never card or billing details. |
+| `payment_success_pending_account` | A verified paid payment-first Checkout Session waiting for a confirmed Buddy Matcher account with the same email. |
 | `payment_success` | Unchanged, still written atomically by the existing fulfillment routine. Join to `checkout_session_created` on `metadata.stripe_checkout_session_id` for campaign attribution. |
 
 Shared attribution fields (when available): `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`, `landing_path`, `referrer`, `referrer_host`, `attribution_captured_at`. Referrer contains only HTTP(S) origin and pathname, with no credentials, query or fragment. Landing paths exclude queries/fragments. Values are allowlisted and bounded to 400 characters before entering Stripe. The ordinary event `source` field continues to mean the in-app UI source, independent of `utm_source`.
@@ -55,9 +58,15 @@ left join lateral (
 where p.event_type = 'payment_success';
 ```
 
+## Payment-first flow — 29 October 2026
+
+Anonymous visitors now enter Stripe Checkout before account creation. Stripe collects their email. After a verified payment, the return page asks them to create or sign in to a free Buddy Matcher account using that email. Pro access is granted only after Stripe confirms the configured one-time product and amount and Supabase confirms the account email. Existing signed-in customers remain bound to their original account ID and continue to be fulfilled by webhook.
+
+The live Stripe webhook subscribes to `checkout.session.completed`, both asynchronous payment outcome events, `checkout.session.expired`, and `payment_intent.payment_failed`.
+
 ## Verification and limits
 
-- `node --experimental-vm-modules --test tests/*.test.mjs`: 68 passing tests, including quota, password recovery, payment security and new attribution cases.
+- `node --experimental-vm-modules --test tests/*.test.mjs`: 71 passing tests, including quota, password recovery, payment-first account claiming, payment security and attribution cases.
 - Production build and targeted lint pass; two existing tool hook-dependency warnings remain.
 - Browser tests cover mobile CTA visibility at 360/390px, desktop layout, route views, feedback answer/skip/Escape, login-to-checkout attribution, Student View gating/event counts, emergency opt-in, hard stop and stale-record denial. Synthetic auth, checkout and quota responses avoid real purchases/allowance use.
 - No database migration or RLS changes. Payment amount, price ID selection, auth and atomic fulfillment remain unchanged.

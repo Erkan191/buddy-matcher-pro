@@ -30,15 +30,17 @@ function LoginPageContent() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const nextPath = getSafeNextPath(searchParams.get("next"));
   const source = searchParams.get("source") || "direct";
-  const isUpgradeFlow = nextPath === "/upgrade";
+  const isPostPaymentFlow = nextPath.startsWith("/upgrade/success");
+  const isUpgradeFlow = nextPath === "/upgrade" || isPostPaymentFlow;
 
   useEffect(() => {
     void trackUsageEvent("login_page_view", {
       next: nextPath,
       source,
       is_upgrade_flow: isUpgradeFlow,
+      is_post_payment_flow: isPostPaymentFlow,
     });
-  }, [isUpgradeFlow, nextPath, source]);
+  }, [isPostPaymentFlow, isUpgradeFlow, nextPath, source]);
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -65,6 +67,7 @@ function LoginPageContent() {
         next: nextPath,
         source,
         is_upgrade_flow: isUpgradeFlow,
+        is_post_payment_flow: isPostPaymentFlow,
       },
       data.user?.id
     );
@@ -101,6 +104,7 @@ function LoginPageContent() {
         next: nextPath,
         source,
         is_upgrade_flow: isUpgradeFlow,
+        is_post_payment_flow: isPostPaymentFlow,
         requires_email_confirmation: !data.session,
       },
       data.user?.id
@@ -113,7 +117,9 @@ function LoginPageContent() {
     }
 
     setMessage(
-      isUpgradeFlow
+      isPostPaymentFlow
+        ? "Account created. Check your email to confirm it, then you’ll return here and Pro will unlock."
+        : isUpgradeFlow
         ? "Account created for free. Check your email to confirm it, then you will continue to Pro. Pro still costs £3.99 one-off."
         : "Account created. If you are not logged in straight away, check your email to confirm your account."
     );
@@ -124,8 +130,10 @@ function LoginPageContent() {
       <div className="bg-white p-8 rounded-2xl shadow max-w-md w-full">
         <h1 className="text-2xl font-bold mb-2">Log in</h1>
         <p className="text-sm text-zinc-600 mb-6">
-          {isUpgradeFlow
-            ? "Create a free account or log in first. Pro still costs £3.99 one-off, and you will continue to the upgrade page next."
+          {isPostPaymentFlow
+            ? "Payment received. Create a free account or log in using the same email you entered at checkout, then Pro will unlock."
+            : isUpgradeFlow
+            ? "Create a free account or log in. Pro costs £3.99 one-off."
             : "Use the email you created your account with. This may be different from your payment email."}
         </p>
 

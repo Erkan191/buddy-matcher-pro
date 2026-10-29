@@ -8,7 +8,9 @@ const reasons = [
   ["another_tool", "I already use another tool"],
   ["features_not_needed", "I don’t need the Pro features"],
   ["account_required", "I don’t want to create an account"],
-  ["payment_issue", "Payment issue"],
+  ["price_not_worth_it", "I don’t want to pay £3.99"],
+  ["payment_method_unavailable", "I don’t have a suitable payment method"],
+  ["checkout_problem", "Checkout or payment didn’t work"],
   ["other", "Other"],
 ];
 
@@ -25,7 +27,12 @@ export default function ProFeedback({ reason, onClose }) {
   function respond(response) {
     if (submitted.current) return;
     submitted.current = true;
-    void trackUsageEvent("pro_decline_feedback", { source: "pro_modal", reason, response });
+    void trackUsageEvent("pro_decline_feedback", {
+      source: "pro_modal",
+      payment_stage: "before_checkout",
+      reason,
+      response,
+    });
     onClose();
   }
 

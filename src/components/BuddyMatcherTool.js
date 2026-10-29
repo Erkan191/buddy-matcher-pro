@@ -1450,11 +1450,7 @@ export default function BuddyMatcherTool({
 
                 <div className="pro-modal-actions">
                   <Link
-                    href={
-                      isLoggedIn
-                        ? "/upgrade"
-                        : "/login?next=/upgrade&source=power_user_nudge"
-                    }
+                    href="/upgrade"
                     className="btn btn-success btn-sm"
                     onClick={() =>
                       markPowerUserNudgeDismissed("power_user_nudge_clicked")
@@ -2002,11 +1998,7 @@ export default function BuddyMatcherTool({
 
             <div className="pro-modal-actions">
               <Link
-                href={
-                  isLoggedIn
-                    ? "/upgrade"
-                    : "/login?next=/upgrade&source=free_generate_limit"
-                }
+                href="/upgrade"
                 className="btn btn-success"
                 onClick={handleFreeLimitUpgradeClicked}
               >
@@ -2063,7 +2055,7 @@ export default function BuddyMatcherTool({
               </p>
 
               <p className="pro-modal-small">
-                Creating an account is free. Pro still costs £3.99 one-off before it unlocks.
+                Pay securely first. Create or sign in to your free account after payment to unlock Pro.
               </p>
             </div>
 
