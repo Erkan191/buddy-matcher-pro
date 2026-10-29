@@ -2038,32 +2038,34 @@ export default function BuddyMatcherTool({
 
       {showProModal && (
         <div className="pro-modal-backdrop">
-          <div className="pro-modal">
-            <div className="pro-modal-badge">Buddy Matcher Pro</div>
+          <div className="pro-modal pro-upsell-modal">
+            <div className="pro-upsell-modal-content">
+              <div className="pro-modal-badge">Buddy Matcher Pro</div>
 
-            <div className="pro-modal-price-pill">£3.99 once · no subscription</div>
+              <div className="pro-modal-price-pill">£3.99 once · no subscription</div>
 
-            <h3>Get full control with Pro</h3>
+              <h3>Get full control with Pro</h3>
 
-            <p className="pro-modal-lead">
-              {lockedReason} Pro is for people who want controlled grouping:
-              fewer repeat pairings, fewer awkward combinations and reusable lists.
-            </p>
+              <p className="pro-modal-lead">
+                {lockedReason} Pro is for people who want controlled grouping:
+                fewer repeat pairings, fewer awkward combinations and reusable lists.
+              </p>
 
-            <div className="pro-benefit-list">
-              {proFeatures.slice(0, 3).map(feature => <div key={feature.title} className="pro-benefit-item"><span aria-hidden="true">{feature.icon}</span><p><strong>{feature.title}</strong> — {feature.text}</p></div>)}
+              <div className="pro-benefit-list">
+                {proFeatures.slice(0, 3).map(feature => <div key={feature.title} className="pro-benefit-item"><span aria-hidden="true">{feature.icon}</span><p><strong>{feature.title}</strong> — {feature.text}</p></div>)}
+              </div>
+              <details className="pro-secondary-features"><summary>More included with Pro</summary>
+                {proFeatures.slice(3).map(feature => <p key={feature.title}><strong>{feature.title}</strong> — {feature.text}</p>)}
+              </details>
+
+              <p className="pro-modal-small">
+                No subscription. Pay once and use it forever.
+              </p>
+
+              <p className="pro-modal-small">
+                Creating an account is free. Pro still costs £3.99 one-off before it unlocks.
+              </p>
             </div>
-            <details className="pro-secondary-features"><summary>More included with Pro</summary>
-              {proFeatures.slice(3).map(feature => <p key={feature.title}><strong>{feature.title}</strong> — {feature.text}</p>)}
-            </details>
-
-            <p className="pro-modal-small">
-              No subscription. Pay once and use it forever.
-            </p>
-
-            <p className="pro-modal-small">
-              Creating an account is free. Pro still costs £3.99 one-off before it unlocks.
-            </p>
 
             <div className="pro-modal-actions">
               <Link href="/upgrade" className="btn btn-success" onClick={() => {

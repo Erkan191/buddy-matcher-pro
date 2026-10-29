@@ -800,6 +800,44 @@ img {
   flex-wrap: wrap;
 }
 
+.pro-upsell-modal {
+  max-height: calc(100dvh - 2rem);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pro-upsell-modal-content {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.4rem 1.4rem 0;
+  scrollbar-gutter: stable;
+}
+
+.pro-upsell-modal > .pro-modal-actions {
+  flex: 0 0 auto;
+  margin-top: 0;
+  padding: 1rem 1.4rem 1.4rem;
+  border-top: 1px solid #e5e7eb;
+  background: #fff;
+  box-shadow: 0 -8px 18px rgba(31, 59, 45, 0.06);
+}
+
+@media (max-width: 480px) {
+  .pro-upsell-modal-content {
+    padding: 1rem 1rem 0;
+  }
+
+  .pro-upsell-modal > .pro-modal-actions {
+    padding: 0.85rem 1rem 1rem;
+  }
+
+  .pro-upsell-modal > .pro-modal-actions .btn {
+    flex: 1 1 auto;
+  }
+}
+
 .page-shell {
   padding: 3rem 0;
 }
