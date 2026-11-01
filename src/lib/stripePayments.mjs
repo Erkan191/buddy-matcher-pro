@@ -1,7 +1,10 @@
 import { sanitizeAttribution } from "./attribution.mjs";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CHECKOUT_ID = /^cs_(live|test)_[A-Za-z0-9]+$/;
+const CLAIM_COOKIE = "bm_checkout_claim";
+const CLAIM_HASH = /^[a-f0-9]{64}$/;
 
 class PaymentError extends Error {
   constructor(message, status) {
@@ -10,8 +13,41 @@ class PaymentError extends Error {
   }
 }
 
-function json(body, status = 200) {
-  return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
+function json(body, status = 200, headers = {}) {
+  return Response.json(body, {
+    status,
+    headers: { "Cache-Control": "no-store", ...headers },
+  });
+}
+
+function hashClaim(value) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function readCookie(request, name) {
+  const cookies = request.headers.get("cookie") || "";
+  for (const entry of cookies.split(";")) {
+    const separator = entry.indexOf("=");
+    if (separator === -1) continue;
+    if (entry.slice(0, separator).trim() === name) {
+      return entry.slice(separator + 1).trim();
+    }
+  }
+  return "";
+}
+
+function claimCookie(value, secure, maxAge = 86_400) {
+  return `${CLAIM_COOKIE}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${
+    secure ? "; Secure" : ""
+  }`;
+}
+
+function claimMatches(request, session) {
+  const expected = session.metadata?.account_claim_hash || "";
+  const claim = readCookie(request, CLAIM_COOKIE);
+  if (!CLAIM_HASH.test(expected) || !/^[A-Za-z0-9_-]{43}$/.test(claim)) return false;
+  const actual = hashClaim(claim);
+  return timingSafeEqual(Buffer.from(actual, "hex"), Buffer.from(expected, "hex"));
 }
 
 async function readBody(request) {
@@ -132,6 +168,7 @@ export function createPaymentService({ stripe, admin, priceId, siteUrl, liveMode
     if (!priceId || !siteUrl) throw new Error("Missing checkout configuration");
     const base = new URL(siteUrl);
     if (liveMode && base.protocol !== "https:") throw new Error("Live checkout requires HTTPS");
+    const accountClaim = user ? "" : randomBytes(32).toString("base64url");
     const checkoutParams = {
       mode: "payment",
       line_items: [{ price: priceId, quantity: 1 }],
@@ -139,6 +176,7 @@ export function createPaymentService({ stripe, admin, priceId, siteUrl, liveMode
         ...sanitizeAttribution(body.attribution),
         purchase_flow: "payment_first_v1",
         session_id: browserSessionId,
+        ...(accountClaim ? { account_claim_hash: hashClaim(accountClaim) } : {}),
       },
       success_url: `${base.origin}/upgrade/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base.origin}/upgrade?checkout=cancelled`,
@@ -154,7 +192,61 @@ export function createPaymentService({ stripe, admin, priceId, siteUrl, liveMode
     // Recording failures must not strand a customer after Stripe creates checkout.
     try { await track("checkout_session_created", session); }
     catch { logger.error("Checkout session recording failed", { sessionId: session.id }); }
-    return json({ url: session.url });
+    return json(
+      { url: session.url },
+      200,
+      accountClaim ? { "Set-Cookie": claimCookie(accountClaim, liveMode) } : {}
+    );
+  }
+
+  async function handlePostPaymentSignup(request) {
+    const { sessionId, email, password } = await readBody(request);
+    if (typeof email !== "string" || typeof password !== "string" ||
+        password.length < 8 || password.length > 128) {
+      throw new PaymentError("Use your checkout email and a password of at least 8 characters.", 400);
+    }
+
+    const session = await retrieveSession(sessionId);
+    await validatePurchase(session);
+    if (session.client_reference_id || session.status !== "complete" || session.payment_status !== "paid") {
+      throw new PaymentError("Your completed payment could not be verified.", 403);
+    }
+    if (!claimMatches(request, session)) {
+      throw new PaymentError(
+        "For security, create the account in the same browser you used to pay. Contact support if you changed device.",
+        403
+      );
+    }
+
+    const paidEmail = checkoutEmail(session);
+    if (!paidEmail || email.trim().toLowerCase() !== paidEmail) {
+      throw new PaymentError("Use the email address entered during checkout.", 403);
+    }
+
+    const { data, error } = await admin.auth.admin.createUser({
+      email: paidEmail,
+      password,
+      email_confirm: true,
+    });
+    if (error) {
+      if (error.code === "email_exists" || error.code === "user_already_exists") {
+        throw new PaymentError("An account already exists for this email. Log in instead.", 409);
+      }
+      if (error.code === "weak_password") {
+        throw new PaymentError("Choose a stronger password with at least 8 characters.", 400);
+      }
+      throw error;
+    }
+    if (!data?.user?.email_confirmed_at || data.user.email?.trim().toLowerCase() !== paidEmail) {
+      throw new Error("Confirmed account creation failed");
+    }
+
+    await fulfill(session, true, data.user);
+    return json(
+      { status: "created" },
+      201,
+      { "Set-Cookie": claimCookie("", liveMode, 0) }
+    );
   }
 
   async function handleStatus(request) {
@@ -264,5 +356,10 @@ export function createPaymentService({ stripe, admin, priceId, siteUrl, liveMode
     };
   }
 
-  return { checkout: safe(handleCheckout), status: safe(handleStatus), webhook: safe(handleWebhook) };
+  return {
+    checkout: safe(handleCheckout),
+    postPaymentSignup: safe(handlePostPaymentSignup),
+    status: safe(handleStatus),
+    webhook: safe(handleWebhook),
+  };
 }

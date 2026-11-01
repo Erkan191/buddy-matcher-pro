@@ -33,6 +33,15 @@ function LoginPageContent() {
   const isPostPaymentFlow = nextPath.startsWith("/upgrade/success");
   const isUpgradeFlow = nextPath === "/upgrade" || isPostPaymentFlow;
 
+  function postPaymentSessionId() {
+    if (!isPostPaymentFlow) return "";
+    try {
+      return new URL(nextPath, "http://local").searchParams.get("session_id") || "";
+    } catch {
+      return "";
+    }
+  }
+
   useEffect(() => {
     void trackUsageEvent("login_page_view", {
       next: nextPath,
@@ -42,23 +51,16 @@ function LoginPageContent() {
     });
   }, [isPostPaymentFlow, isUpgradeFlow, nextPath, source]);
 
-  async function handleLogin(e) {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
-
+  async function signInAndContinue() {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
     });
-
-    setLoading(false);
-
     if (error) {
       setMessage(error.code === "invalid_credentials"
         ? "Email or password not recognised. Use the email you signed up with, or choose Forgot password below."
         : error.message);
-      return;
+      return false;
     }
 
     await trackUsageEvent(
@@ -74,11 +76,49 @@ function LoginPageContent() {
 
     router.push(nextPath);
     router.refresh();
+    return true;
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+    await signInAndContinue();
+    setLoading(false);
   }
 
   async function handleSignup() {
     setLoading(true);
     setMessage("");
+
+    if (isPostPaymentFlow) {
+      try {
+        const response = await fetch("/api/auth/post-payment-signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: postPaymentSessionId(),
+            email: email.trim(),
+            password,
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok && response.status !== 409) {
+          setMessage(result?.error || "We could not create your account. Please try again.");
+          return;
+        }
+        if (!response.ok) {
+          setMessage(result?.error || "This account already exists. Log in instead.");
+          return;
+        }
+        await signInAndContinue();
+      } catch {
+        setMessage("We could not create your account. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -131,7 +171,7 @@ function LoginPageContent() {
         <h1 className="text-2xl font-bold mb-2">Log in</h1>
         <p className="text-sm text-zinc-600 mb-6">
           {isPostPaymentFlow
-            ? "Payment received. Create a free account or log in using the same email you entered at checkout, then Pro will unlock."
+            ? "Payment received. Create an account using the same email you entered at checkout, or log in if you already have one. Pro unlocks immediately—no email confirmation needed."
             : isUpgradeFlow
             ? "Create a free account or log in. Pro costs £3.99 one-off."
             : "Use the email you created your account with. This may be different from your payment email."}
@@ -179,7 +219,11 @@ function LoginPageContent() {
           onClick={handleSignup}
           className="w-full border border-zinc-300 p-3 rounded disabled:opacity-50"
         >
-          {loading ? "Working..." : "Create free account"}
+          {loading
+            ? "Working..."
+            : isPostPaymentFlow
+            ? "Create account and unlock Pro"
+            : "Create free account"}
         </button>
 
         {message && <p role="status" className="mt-4 text-sm">{message}</p>}

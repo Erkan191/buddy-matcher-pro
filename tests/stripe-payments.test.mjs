@@ -12,7 +12,7 @@ const stripeSdk = new Stripe("sk_test_regression_only");
 function fixture() {
   const state = {
     pro: false, rpcError: false, authError: false, intentStatus: "processing", created: [], events: [], grants: [], receipts: new Set(),
-    userEmail: "login@example.invalid", emailConfirmed: true,
+    userEmail: "login@example.invalid", emailConfirmed: true, createdUsers: [], createUserError: null,
     session: { id: sessionId, client_reference_id: userId, mode: "payment", livemode: false,
       amount_total: 399, currency: "gbp", status: "complete", payment_status: "paid",
       payment_intent: "pi_regression", metadata: { session_id: userId },
@@ -26,8 +26,16 @@ function fixture() {
         ? { data: { user: { id: userId, email: state.userEmail,
           email_confirmed_at: state.emailConfirmed ? "2026-01-01T00:00:00Z" : null } } }
         : { error: new Error("Invalid") },
-      admin: { getUserById: async (id) => ({ data: { user: { id, email: state.userEmail,
-        email_confirmed_at: "2026-01-01T00:00:00Z" } } }) },
+      admin: {
+        getUserById: async (id) => ({ data: { user: { id, email: state.userEmail,
+          email_confirmed_at: "2026-01-01T00:00:00Z" } } }),
+        createUser: async (attributes) => {
+          if (state.createUserError) return { data: null, error: state.createUserError };
+          state.createdUsers.push(attributes);
+          return { data: { user: { id: userId, email: attributes.email,
+            email_confirmed_at: attributes.email_confirm ? "2026-01-01T00:00:00Z" : null } }, error: null };
+        },
+      },
     },
     from: (table) => ({
       select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { is_pro: state.pro } }) }) }),
@@ -61,9 +69,10 @@ function fixture() {
   return { state, service };
 }
 
-function request(body = {}, token = "valid") {
+function request(body = {}, token = "valid", extraHeaders = {}) {
   return new Request("http://localhost/api", { method: "POST", headers: {
     "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...extraHeaders,
   }, body: JSON.stringify(body) });
 }
 
@@ -83,11 +92,71 @@ test("checkout allows payment first without an account but rejects an invalid su
   assert.equal(anonymous.state.created[0].client_reference_id, undefined);
   assert.equal(anonymous.state.created[0].customer_email, undefined);
   assert.equal(anonymous.state.created[0].metadata.purchase_flow, "payment_first_v1");
+  assert.match(anonymous.state.created[0].metadata.account_claim_hash, /^[a-f0-9]{64}$/);
   assert.equal(anonymous.state.events[0].user_id, null);
+  assert.match(response.headers.get("set-cookie"), /^bm_checkout_claim=[A-Za-z0-9_-]{43};/);
+  assert.equal(JSON.stringify(anonymous.state.created[0]).includes(
+    response.headers.get("set-cookie").match(/^bm_checkout_claim=([^;]+)/)[1]
+  ), false);
 
   const invalid = fixture();
   assert.equal((await invalid.service.checkout(request({}, "expired"))).status, 401);
   assert.equal(invalid.state.created.length, 0);
+});
+
+test("a paid checkout can create and activate a confirmed account only in the claiming browser", async () => {
+  const { state, service } = fixture();
+  state.session.client_reference_id = null;
+  state.session.metadata.purchase_flow = "payment_first_v1";
+  state.session.customer_details.email = "buyer@example.invalid";
+
+  const checkoutResponse = await service.checkout(request({ sessionId: userId }, null));
+  const claimCookie = checkoutResponse.headers.get("set-cookie").split(";")[0];
+  state.session.metadata = state.created[0].metadata;
+
+  const missingClaim = await service.postPaymentSignup(request({
+    sessionId, email: "buyer@example.invalid", password: "strong-password",
+  }, null));
+  assert.equal(missingClaim.status, 403);
+  assert.equal(state.createdUsers.length, 0);
+
+  const wrongEmail = await service.postPaymentSignup(request({
+    sessionId, email: "someone@example.invalid", password: "strong-password",
+  }, null, { Cookie: claimCookie }));
+  assert.equal(wrongEmail.status, 403);
+  assert.equal(state.createdUsers.length, 0);
+
+  const response = await service.postPaymentSignup(request({
+    sessionId, email: "buyer@example.invalid", password: "strong-password",
+  }, null, { Cookie: claimCookie }));
+  assert.equal(response.status, 201);
+  assert.deepEqual(await response.json(), { status: "created" });
+  assert.deepEqual(state.createdUsers[0], {
+    email: "buyer@example.invalid", password: "strong-password", email_confirm: true,
+  });
+  assert.equal(state.grants[0].p_user_id, userId);
+  assert.equal(state.pro, true);
+  assert.match(response.headers.get("set-cookie"), /Max-Age=0/);
+});
+
+test("post-payment account creation rejects unpaid checkouts and weak passwords", async () => {
+  const weak = fixture();
+  assert.equal((await weak.service.postPaymentSignup(request({
+    sessionId, email: "buyer@example.invalid", password: "short",
+  }, null))).status, 400);
+  assert.equal(weak.state.createdUsers.length, 0);
+
+  const unpaid = fixture();
+  unpaid.state.session.client_reference_id = null;
+  unpaid.state.session.metadata.purchase_flow = "payment_first_v1";
+  unpaid.state.session.payment_status = "unpaid";
+  const checkoutResponse = await unpaid.service.checkout(request({ sessionId: userId }, null));
+  const claimCookie = checkoutResponse.headers.get("set-cookie").split(";")[0];
+  unpaid.state.session.metadata = unpaid.state.created[0].metadata;
+  assert.equal((await unpaid.service.postPaymentSignup(request({
+    sessionId, email: "buyer@example.invalid", password: "strong-password",
+  }, null, { Cookie: claimCookie }))).status, 403);
+  assert.equal(unpaid.state.createdUsers.length, 0);
 });
 
 test("checkout binds the verified user, ignoring a spoofed userId and using auth email", async () => {
